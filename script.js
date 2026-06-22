@@ -3,7 +3,7 @@
 // ==========================================
 // 🛠️ TRUE = Bypasses countdown lock instantly so you can test on your desktop.
 // 🚀 FALSE = Activates countdown for live deployment.
-const IS_DRY_RUN = true; 
+const IS_DRY_RUN = false; 
 
 // Target Date: July 16, 2026, 00:00:00 JST (UTC+9)
 const TARGET_DATE_JST = new Date("2026-07-16T00:00:00+09:00").getTime();
