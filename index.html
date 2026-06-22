@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy 30th Birthday, Akina!</title>
+    
+    <link rel="icon" type="image/png" href="pics/rei-plush.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="rei-bg-layer">
+        <div class="rei-plush bubble-1"></div>
+        <div class="rei-plush bubble-2"></div>
+        <div class="rei-plush bubble-3"></div>
+        <div class="rei-plush bubble-4"></div>
+        <div class="rei-plush bubble-5"></div>
+        <div class="rei-plush bubble-6"></div>
+        <div class="rei-plush bubble-7"></div>
+        <div class="rei-plush bubble-8"></div>
+    </div>
+
+    <div id="countdownLockScreen" class="lock-overlay" style="overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 10px;">
+        <div class="rei-bg-layer" style="z-index: 10001;">
+            <div class="rei-plush bubble-1"></div>
+            <div class="rei-plush bubble-2"></div>
+            <div class="rei-plush bubble-3"></div>
+            <div class="rei-plush bubble-4"></div>
+            <div class="rei-plush bubble-5"></div>
+            <div class="rei-plush bubble-6"></div>
+            <div class="rei-plush bubble-7"></div>
+            <div class="rei-plush bubble-8"></div>
+        </div>
+        <div class="lock-content" style="max-width: 100%; width: 100%; margin: 0 auto; display: flex; flex-direction: column; align-items: center;">
+            <div class="timer-profile-wrapper">
+                <img src="pics/akina.jpg" alt="Akina" class="profile-pic timer-pic" onerror="this.src='https://via.placeholder.com/150?text=Akina'">
+            </div>
+            <h2>Waiting for July 16, 2026 🎂</h2>
+            <div id="countdownDisplay" class="timer-grid">
+                <div><span id="days">00</span><label>Days</label></div>
+                <div><span id="hours">00</span><label>Hours</label></div>
+                <div><span id="minutes">00</span><label>Mins</label></div>
+                <div><span id="seconds">00</span><label>Secs</label></div>
+            </div>
+            <p style="margin-bottom: 10px; font-size: 0.9rem; padding: 0 10px;">Counting down to Akina's 30th birthday in JST 🌸</p>
+
+            <button id="openPracticeBtn" onclick="startPracticeMode()" style="margin-top: 10px; padding: 12px 24px; background: #ff758f; color: white; border: none; border-radius: 25px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 117, 143, 0.4); transition: transform 0.2s; -webkit-tap-highlight-color: transparent;">
+                🎮 Try Arcade Practice Mode
+            </button>
+
+            <div id="practiceArena" class="hidden" style="background: #1a1a2e; padding: 15px 10px; border-radius: 20px; border: 3px solid #ff758f; margin-top: 20px; width: 100%; max-width: 340px; box-sizing: border-box; position: relative; z-index: 10002; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <h3 style="color: #ff758f; margin-top: 0; margin-bottom: 5px; font-size: 1.1rem; letter-spacing: 1px;">🎮 Practice Arena 🎮</h3>
+                <p id="practiceStatus" style="color: #fff; font-size: 0.8rem; margin-bottom: 12px; text-align: center;">Get ready to practice!</p>
+                
+                <div id="practiceFlappyStage" class="hidden" style="width: 100%; text-align: center;">
+                    <h4 id="practiceFlappyScoreBoard" style="color: #fff; margin-bottom: 8px; margin-top: 0; font-size: 0.9rem;">Score: 0 / 20</h4>
+                    <div id="practiceFlappyCanvasContainer" style="display: flex; justify-content: center; align-items: center; border: 2px solid #fff; border-radius: 8px; background: #70c5ce; overflow: hidden; margin: 0 auto; width: 320px; max-width: 100%;"></div>
+                </div>
+
+                <div id="practiceCrosswalkStage" class="hidden" style="width: 100%; text-align: center;">
+                    <h4 style="color: #fff; margin-bottom: 8px; margin-top: 0; font-size: 0.9rem;">Crosswalk Training!</h4>
+                    <div id="practiceCrosswalkCanvasContainer" style="display: flex; justify-content: center; align-items: center; border: 2px solid #fff; border-radius: 8px; background: #fff; overflow: hidden; margin: 0 auto; width: 320px; max-width: 100%;"></div>
+                    
+                    <div style="margin-top: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding-bottom: 5px;">
+                        <button onclick="moveCat('up')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 70px; -webkit-tap-highlight-color: transparent;">▲ Up</button>
+                        <div style="display: flex; gap: 20px;">
+                            <button onclick="moveCat('left')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 70px; -webkit-tap-highlight-color: transparent;">◀ Left</button>
+                            <button onclick="moveCat('right')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 70px; -webkit-tap-highlight-color: transparent;">Right ▶</button>
+                        </div>
+                        <button onclick="moveCat('down')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 70px; -webkit-tap-highlight-color: transparent;">▼ Down</button>
+                    </div>
+                </div>
+
+                <button onclick="closePracticeMode()" style="margin-top: 15px; background: transparent; color: #bbb; border: none; text-decoration: underline; cursor: pointer; font-size: 0.8rem; padding: 5px 15px; -webkit-tap-highlight-color: transparent;">Close Practice</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="main-wrapper" id="mainContent" style="display: none; opacity: 0;">
+        
+        <header class="hero-section">
+            <div class="floating-hearts"></div>
+            <div class="hero-profile-layout">
+                <img src="pics/akina.jpg" alt="Akina" class="profile-pic" onerror="this.src='https://via.placeholder.com/150?text=Akina'">
+                <div class="hero-text">
+                    <h1 class="animate-pop">Happy 30th Birthday,<br><span class="highlight-name">Akina</span>! ✨</h1>
+                    <p class="subtitle">Welcome to your beautiful major milestone chapter.</p>
+                </div>
+            </div>
+        </header>
+
+        <section class="content-section">
+            <h2>Our Story Timeline 🗺️</h2>
+            <div class="timeline">
+                
+                <div class="timeline-item">
+                    <div class="timeline-badge">🎟️</div>
+                    <div class="timeline-panel">
+                        <h3>April 25, 2026 • 3:00 PM</h3>
+                        <h4>Meeting in the Queue</h4>
+                        <p>Where fate stepped in! Standing in line together with our sequential queue numbers (331 and 332). The start of something unforgettable.</p>
+                        <div class="media-scroller">
+                            <img src="pics/when we met.jpg" alt="Meeting in the queue" class="gallery-img">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-badge">🎵</div>
+                    <div class="timeline-panel">
+                        <h3>April 25, 2026 • 4:00 PM - 8:00 PM</h3>
+                        <h4>IVE Concert in Manila</h4>
+                        <p>Experiencing the incredible energy live, singing along, and celebrating seeing Rei together!</p>
+                        <div class="media-scroller">
+                            <img src="pics/Ive-Con-1.jpg" alt="IVE Concert 1" class="gallery-img">
+                            <img src="pics/Ive-Con-2.jpg" alt="IVE Concert 2" class="gallery-img">
+                            <img src="pics/Ive-Con-3.jpg" alt="IVE Concert 3" class="gallery-img">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-badge">🥤</div>
+                    <div class="timeline-panel">
+                        <h3>April 25, 2026 • 8:00 PM - 10:00 PM</h3>
+                        <h4>Post-Concert Hangout</h4>
+                        <p>Winding down after an amazing high-energy show, grabbing refreshing drinks, and keeping the concert energy alive.</p>
+                        <div class="media-scroller">
+                            <img src="pics/chagee-1.jpg" alt="Post-concert drinks at Chagee" class="gallery-img">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-badge">🏙️</div>
+                    <div class="timeline-panel">
+                        <h3>June 14, 2026 • 3:00 PM - 12:00 AM</h3>
+                        <h4>Toycon, Binondo & Venice Grand Canal</h4>
+                        <p>An amazing day packed with memories: checking out Toycon, an incredible dinner hangout at Binondo Cafe, and safely getting you home to Venice Grand Canal Mall by midnight.</p>
+                        <div class="media-scroller">
+                            <img src="pics/toycon-1.jpg" alt="Toycon Hangout 1" class="gallery-img">
+                            <img src="pics/toycon-2.jpg" alt="Toycon Hangout 2" class="gallery-img">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+        
+        <section class="content-section">
+            <h2>A Little Send-Off Surprise ✈️🌸</h2>
+            <p style="font-size: 0.95rem; color: #666; margin-bottom: 15px;">
+                A few early birthday tokens to remember home by before you hopped on your flight to Japan! 💛
+            </p>
+            <div class="media-scroller">
+                <img src="pics/early gift to her before flying to jp -1.jpg" alt="Early Gift Part 1" class="gallery-img">
+                <img src="pics/early gift to her before flying to jp -2.jpg" alt="Early Gift Part 2" class="gallery-img">
+                <img src="pics/early gift to her before flying to jp -3.jpg" alt="Early Gift Part 3" class="gallery-img">
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="gift-container" id="giftContainer">
+                
+                <div id="lockedState" class="gift-state">
+                    <div class="gift-box-animated" onclick="triggerGiftHint()">🎁</div>
+                    <h2>A Special Birthday Surprise</h2>
+                    <p style="margin-bottom: 20px;">Answer these 3 personal trivia questions to crack the lock and open your birthday gift blowout! 🌸</p>
+                    
+                    <div id="quizContainer" class="quiz-box">
+                        <div class="quiz-progress">Question <span id="currentQuestionNum">1</span> of 3</div>
+                        <h3 id="questionText">Loading question...</h3>
+                        <div id="choicesGrid" class="choices-grid"></div>
+                        <p id="quizFeedback" class="quiz-feedback-msg"></p>
+                    </div>
+                </div>
+
+                <div id="arcadeState" class="gift-state hidden" style="display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+                    <div class="arcade-cabinet" style="background: #1a1a2e; padding: 20px 15px; border-radius: 20px; border: 3px solid #ff758f; width: 100%; max-width: 340px; box-sizing: border-box; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; text-align: center;">
+                        
+                        <div class="arcade-header" style="margin-bottom: 10px;">
+                            <h3 style="color: #ff758f; margin: 0; font-size: 1.2rem; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 8px;">
+                                🎮 REI'S ARCADE CONSOLE 🎮
+                            </h3>
+                            <p style="color: #bbb; font-size: 0.8rem; margin: 5px 0 0 0;">Help Rei navigate to her concert stage!</p>
+                        </div>
+                        
+                        <div id="flappyStage" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <h4 id="flappyScoreBoard" style="color: #fff; margin-bottom: 12px; margin-top: 5px; font-size: 1rem; font-weight: bold; letter-spacing: 0.5px;">Score: 0 / 20</h4>
+                            <div id="flappyCanvasContainer" style="display: flex; justify-content: center; align-items: center; border: 2px solid #fff; border-radius: 8px; background: #4ea8de; overflow: hidden; margin: 0 auto; width: 320px; max-width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>
+                            <p class="control-tip" style="color: #ffccd5; font-size: 0.8rem; margin-top: 12px; margin-bottom: 0;">💡 Tap frame or Spacebar to jump</p>
+                        </div>
+
+                        <div id="crosswalkStage" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <h4 style="color: #fff; margin-bottom: 12px; margin-top: 5px; font-size: 1rem; font-weight: bold; letter-spacing: 0.5px;">Crosswalk Stage! 🐾</h4>
+                            <div id="crosswalkCanvasContainer" style="display: flex; justify-content: center; align-items: center; border: 2px solid #fff; border-radius: 8px; background: #8d99ae; overflow: hidden; margin: 0 auto; width: 320px; max-width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>
+                            
+                            <div class="mobile-controls" style="margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%;">
+                                <button onclick="moveCat('up')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 80px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent;">▲ Up</button>
+                                <div style="display: flex; gap: 20px;">
+                                    <button onclick="moveCat('left')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 80px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent;">◀ Left</button>
+                                    <button onclick="moveCat('right')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 80px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent;">Right ▶</button>
+                                </div>
+                                <button onclick="moveCat('down')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 80px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent;">▼ Down</button>
+                            </div>
+                            <p class="control-tip" style="color: #ffccd5; font-size: 0.8rem; margin-top: 12px; margin-bottom: 0;">💡 Use Arrow Keys / WASD / Buttons</p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="unlockedState" class="gift-state hidden">
+                    <div class="ribbon-banner">🎉 UNLOCKED 🎉</div>
+                    <h2>Happy 30th Birthday, Akina!</h2>
+                    <p class="gift-subtext">Sent with love via GCash</p>
+                    
+                    <div class="qr-container">
+                        <img src="pics/sample qr rjo.jpg" alt="GCash QR Code" class="qr-code">
+                    </div>
+                    
+                    <div>
+                        <a href="pics/sample qr rjo.jpg" download="Akina-Birthday-GCashQR.png" class="download-btn">
+                            📥 Save QR to Camera Roll
+                        </a>
+                    </div>
+                    
+                    <div class="gift-amount">₱3,000</div>
+                    <p class="instructions">Tap the button above to save the QR to your phone, then open GCash and upload the image to instantly claim your birthday blowout! 🎂</p>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+    
+    <script src="arcade-state.js"></script>
+    <script src="flappy-rei.js"></script>
+    <script src="crosswalk-cat.js"></script>
+    <script src="script.js"></script>
+    
+    <div id="lightboxModal" class="lightbox">
+        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+        <button class="lightbox-nav prev" onclick="changeLightboxImage(-1)">&#10094;</button>
+        <div class="lightbox-content-wrapper">
+            <img id="lightboxImg" src="" alt="Enlarged view">
+        </div>
+        <button class="lightbox-nav next" onclick="changeLightboxImage(1)">&#10095;</button>
+    </div>
+
+    <div id="reiDisappointedPop" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 25px; border-radius: 15px; text-align: center; max-width: 85%; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <img src="pics/rei-disappointed.jpg" alt="Rei is checking your skills" style="max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; margin-bottom: 12px;" onerror="this.src='https://via.placeholder.com/250?text=Ganbare!'">
+            <h3 style="color: #d90429; margin: 0 0 5px; font-size: 1.2rem;">Rei is watching! 👀</h3>
+            <p style="color: #555; margin: 0; font-size: 0.9rem; font-weight: 500;">"Don't give up, let's try that round again!"</p>
+        </div>
+    </div>
+
+</body>
+</html>
