@@ -1,21 +1,19 @@
 // ==========================================
 // crosswalk-cat.js
-// GAME 2: CROSSWALK DODGE MINI-GAME (UPGRADED)
+// GAME 2: CROSSWALK DODGE (OPTIMIZED HITBOXES)
 // ==========================================
 
-// 👥 EXTENDABLE CHARACTER SELECTION LIST
-// You can easily add a 5th or 6th character by following the pattern below!
+// ⚠️ IMAGE DECLARATION ZONE: REPLACE THE `imgSrc` URLS WITH YOUR PICTURES!
+// If `imgSrc` is empty (""), it defaults back to using emojis.
 const CAT_CHARACTERS = [
-    { id: "classic", name: "Classic Cat", emoji: "🐱", speedBonus: 0 },
-    { id: "calico",  name: "Calico",      emoji: "🐈", speedBonus: 2 },
-    { id: "tiger",   name: "Tiger",       emoji: "🐯", speedBonus: 4 },
-    { id: "black",   name: "Lucky Black", emoji: "🐈‍⬛", speedBonus: 1 },
-    // To add more characters in the future, just uncomment/edit these lines:
-    // { id: "lion",    name: "Lion Cub",    emoji: "🦁", speedBonus: 5 },
-    // { id: "fox",     name: "Sneaky Fox",  emoji: "🦊", speedBonus: 3 }
+    { id: "classic", name: "Drooler", emoji: "🐱", speedBonus: 3, imgSrc: "pics/drooler.png" },
+    { id: "calico",  name: "CatIna",      emoji: "🐈", speedBonus: 2, imgSrc: "pics/catina.png" },
+    { id: "tiger",   name: "Bulgogi",       emoji: "🐯", speedBonus: 4, imgSrc: "pics/bulgogi.png" },
+    { id: "black",   name: "Lazy Tilapia", emoji: "🐈‍⬛", speedBonus: 1, imgSrc: "pics/lazytilapia.png" },
+    { id: "black",   name: "Fluffy Loaf", emoji: "🐈‍⬛", speedBonus: 0, imgSrc: "pics/fluffyloaf.png" }
 ];
 
-let selectedCharacter = CAT_CHARACTERS[0]; // Default character
+let selectedCharacter = CAT_CHARACTERS[0]; 
 
 function initCrosswalkGame() {
     const containerId = isPracticeMode ? "practiceCrosswalkCanvasContainer" : "crosswalkCanvasContainer";
@@ -23,14 +21,12 @@ function initCrosswalkGame() {
     if (!container) return;
     container.innerHTML = "";
     
-    // Create UI wrapper for Character Selection + Canvas
     const wrapper = document.createElement("div");
     wrapper.style.position = "relative";
     wrapper.style.width = "320px";
     wrapper.style.margin = "0 auto";
     container.appendChild(wrapper);
 
-    // Create Canvas Element
     const canvas = document.createElement("canvas");
     canvas.width = 320;
     canvas.height = 360;
@@ -38,7 +34,6 @@ function initCrosswalkGame() {
     
     const ctx = canvas.getContext("2d");
     
-    // Create HTML Overlay for Character Selection Screen
     const charScreen = document.createElement("div");
     charScreen.id = "catCharScreen";
     charScreen.style.cssText = "position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(30,30,40,0.95); display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; font-family:sans-serif; border-radius:8px; z-index:10;";
@@ -54,15 +49,17 @@ function initCrosswalkGame() {
     CAT_CHARACTERS.forEach(char => {
         let btn = document.createElement("button");
         btn.style.cssText = "background:#2b2d42; border:2px solid #8d99ae; color:white; padding:10px; border-radius:8px; cursor:pointer; font-size:14px; display:flex; flex-direction:column; align-items:center; gap:5px; transition:0.2s;";
-        btn.innerHTML = `<span style="font-size:24px;">${char.emoji}</span> <span>${char.name}</span>`;
+        
+        btn.innerHTML = char.imgSrc 
+            ? `<img src="${char.imgSrc}" style="width: 32px; height: 32px; object-fit: contain;"><span>${char.name}</span>` 
+            : `<span style="font-size:24px;">${char.emoji}</span><span>${char.name}</span>`;
         
         btn.onclick = () => {
             selectedCharacter = char;
-            charScreen.remove(); // Hide selection screen
-            startGameEngine();   // Launch actual game
+            charScreen.remove(); 
+            startGameEngine();   
         };
         
-        // Hover effect
         btn.onmouseenter = () => btn.style.borderColor = "#ff758f";
         btn.onmouseleave = () => btn.style.borderColor = "#8d99ae";
         grid.appendChild(btn);
@@ -71,11 +68,19 @@ function initCrosswalkGame() {
     charScreen.appendChild(grid);
     wrapper.appendChild(charScreen);
 
-    // Audio setup variables
+    // --- AUDIO GRABBERS ---
     const bgAudio = document.getElementById("catBgMusic");
     const moveAudio = document.getElementById("catMoveSound");
+    const dieAudio = document.getElementById("catDieSound");
+    const winAudio = document.getElementById("catWinSound");
 
-    // Game variables placeholder initialized inside wrapper scope
+    function playSound(audioEl) {
+        if (audioEl) {
+            audioEl.currentTime = 0;
+            audioEl.play().catch(e => console.log("Audio prevented:", e));
+        }
+    }
+
     let lastTime = performance.now();
     const fpsInterval = 1000 / 60;
     
@@ -84,6 +89,7 @@ function initCrosswalkGame() {
     let baseSpeed = 15;
     let gameOver = false;
     let gameStarted = false; 
+    let loadedPlayerImage = null;
     
     let cars = [
         { x: 0, y: 70, speed: 2.2, width: 45, icon: "🚘" },
@@ -92,40 +98,27 @@ function initCrosswalkGame() {
         { x: 260, y: 250, speed: -2.0, width: 45, icon: "🚗" }
     ];
     
-    // Core game initialization triggered post character select
     function startGameEngine() {
+        if (selectedCharacter.imgSrc) {
+            loadedPlayerImage = new Image();
+            loadedPlayerImage.src = selectedCharacter.imgSrc;
+        }
+
         window.addEventListener("keydown", handleCrosswalkKeys);
         requestAnimationFrame(update);
     }
 
-    function playMoveAudio() {
-        if (moveAudio) {
-            moveAudio.currentTime = 0;
-            moveAudio.play().catch(e => console.log("Audio play blocked until interaction"));
-        }
-    }
-
     function playBgAudio() {
-        if (bgAudio && bgAudio.paused) {
-            bgAudio.currentTime = 0;
-            bgAudio.play().catch(e => console.log("Audio play blocked until interaction"));
-        }
+        if (bgAudio && bgAudio.paused) { bgAudio.currentTime = 0; bgAudio.play().catch(e=>e); }
     }
 
     function stopBgAudio() {
-        if (bgAudio) {
-            bgAudio.pause();
-        }
+        if (bgAudio) bgAudio.pause();
     }
 
     const handleCrosswalkKeys = (e) => {
         if (gameOver) return;
-        
-        // Start background music on first ever movement input
-        if (!gameStarted) {
-            gameStarted = true;
-            playBgAudio();
-        }
+        if (!gameStarted) { gameStarted = true; playBgAudio(); }
         
         const finalSpeed = baseSpeed + selectedCharacter.speedBonus;
         let moved = false;
@@ -135,20 +128,13 @@ function initCrosswalkGame() {
         if (e.key === "ArrowLeft" || e.code === "KeyA") { catX -= finalSpeed; moved = true; }
         if (e.key === "ArrowRight" || e.code === "KeyD") { catX += finalSpeed; moved = true; }
         
-        if (moved) playMoveAudio();
-
-        if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].indexOf(e.key) > -1) {
-            e.preventDefault();
-        }
+        if (moved) playSound(moveAudio);
+        if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].indexOf(e.key) > -1) { e.preventDefault(); }
     };
     
     window.moveCat = function(direction) {
         if (gameOver) return;
-        
-        if (!gameStarted) {
-            gameStarted = true;
-            playBgAudio();
-        }
+        if (!gameStarted) { gameStarted = true; playBgAudio(); }
         
         const finalSpeed = baseSpeed + selectedCharacter.speedBonus;
         if (direction === 'up') catY -= finalSpeed;
@@ -156,7 +142,7 @@ function initCrosswalkGame() {
         if (direction === 'left') catX -= finalSpeed;
         if (direction === 'right') catX += finalSpeed;
         
-        playMoveAudio();
+        playSound(moveAudio);
     };
     
     function resetCrosswalkMatch() {
@@ -180,7 +166,6 @@ function initCrosswalkGame() {
         if (elapsed < fpsInterval) return;
         lastTime = currentTime - (elapsed % fpsInterval);
         
-        // Drawing environment
         ctx.fillStyle = "#8d99ae"; 
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
@@ -193,7 +178,9 @@ function initCrosswalkGame() {
             ctx.fillRect(i, 50, 15, 260);
         }
         
-        // Car systems
+        let coreX = catX + 12; 
+        let coreY = catY + 12; 
+
         for (let i = 0; i < cars.length; i++) {
             if (gameStarted && !gameOver) {
                 cars[i].x += cars[i].speed;
@@ -206,19 +193,25 @@ function initCrosswalkGame() {
             ctx.textBaseline = "top";
             ctx.fillText(cars[i].icon, cars[i].x, cars[i].y - 5);
             
-            if (gameStarted && !gameOver && catX + 10 > cars[i].x && catX - 10 < cars[i].x + cars[i].width) {
-                if (catY + 10 > cars[i].y && catY - 10 < cars[i].y + 24) {
-                    gameOver = true;
-                    gameStarted = false;
-                    stopBgAudio();
-                    const meme = document.getElementById("reiDisappointedPop");
-                    if (meme) {
-                        meme.classList.remove("hidden");
-                        setTimeout(() => { 
-                            meme.classList.add("hidden"); 
-                            resetCrosswalkMatch();
-                        }, 1800);
-                    }
+            // OPTIMIZED DISTANCE-BASED HITBOX
+            let carCoreX = cars[i].x + 18;
+            let carCoreY = cars[i].y + 12;
+            let distX = Math.abs(coreX - carCoreX);
+            let distY = Math.abs(coreY - carCoreY);
+
+            if (gameStarted && !gameOver && distX < 18 && distY < 14) {
+                gameOver = true;
+                gameStarted = false;
+                stopBgAudio();
+                playSound(dieAudio);
+
+                const meme = document.getElementById("reiDisappointedPop");
+                if (meme) {
+                    meme.classList.remove("hidden");
+                    setTimeout(() => { 
+                        meme.classList.add("hidden"); 
+                        resetCrosswalkMatch();
+                    }, 1800);
                 }
             }
         }
@@ -227,11 +220,14 @@ function initCrosswalkGame() {
         if (catX > canvas.width - 25) catX = canvas.width - 25;
         if (catY > canvas.height - 35) catY = canvas.height - 35;
         
-        // Render Chosen Character
-        ctx.font = "24px sans-serif";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
-        ctx.fillText(selectedCharacter.emoji, catX, catY);
+        if (loadedPlayerImage && loadedPlayerImage.complete) {
+            ctx.drawImage(loadedPlayerImage, catX, catY, 26, 26);
+        } else {
+            ctx.font = "24px sans-serif";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            ctx.fillText(selectedCharacter.emoji, catX, catY);
+        }
         
         if (!gameStarted && !gameOver) {
             ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
@@ -245,6 +241,8 @@ function initCrosswalkGame() {
         if (catY <= 25 && !gameOver) {
             window.removeEventListener("keydown", handleCrosswalkKeys);
             stopBgAudio();
+            playSound(winAudio);
+
             currentStage = 3; 
             
             setTimeout(() => {

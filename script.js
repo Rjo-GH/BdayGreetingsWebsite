@@ -1,15 +1,27 @@
 // ==========================================
 // CONFIGURATION & SECURITY MANAGEMENT
 // ==========================================
-// 🛠️ TRUE = Bypasses countdown lock instantly so you can test on your desktop.
-// 🚀 FALSE = Activates countdown for live deployment.
 const IS_DRY_RUN = false; 
 
-// Target Date: July 16, 2026, 00:00:00 JST (UTC+9)
+// ⚙️ REI CONFIGURATION: Adjust how many floating Rei's appear!
+const NUM_ROTATING_REIS = 30; 
+
+function generateFloatingReis() {
+    const containers = [document.getElementById('mainReiBg'), document.getElementById('lockReiBg')];
+    containers.forEach(container => {
+        if(!container) return;
+        container.innerHTML = "";
+        for(let i=1; i<=NUM_ROTATING_REIS; i++) {
+            const div = document.createElement('div');
+            div.className = `rei-plush bubble-${((i - 1) % 30) + 1}`; 
+            container.appendChild(div);
+        }
+    });
+}
+
 const TARGET_DATE_JST = new Date("2026-07-16T00:00:00+09:00").getTime();
 let serverTimeOffset = 0;
 
-// Fetch secure network time once when the page loads so she can't cheat the clock
 async function syncSecureTime() {
     try {
         const response = await fetch("https://worldtimeapi.org/api/timezone/Asia/Tokyo");
@@ -53,18 +65,129 @@ const countdownInterval = setInterval(() => {
 
 function hideCountdownLock() {
     const lockScreen = document.getElementById("countdownLockScreen");
-    const mainContent = document.getElementById("mainContent");
+    const loginScreen = document.getElementById("loginScreen");
     
     if (lockScreen) {
         lockScreen.style.display = "none";
         lockScreen.innerHTML = ""; 
     }
     
-    if (mainContent) {
-        mainContent.style.display = "flex";
-        setTimeout(() => { mainContent.style.opacity = "1"; }, 50);
+    if (loginScreen) {
+        loginScreen.classList.remove("hidden");
+        loginScreen.style.display = "flex";
     }
 }
+
+// ==========================================
+// SECURE LOGIN SYSTEM 
+// ==========================================
+window.processLogin = function() {
+    const userEl = document.getElementById("loginUser").value.trim().toLowerCase();
+    const passEl = document.getElementById("loginPass").value.trim();
+    const errEl = document.getElementById("loginError");
+
+    if (btoa(userEl) === "YWtpbmE=" && btoa(passEl) === "ZGl2ZTIwMjY=") {
+        document.getElementById("loginScreen").style.display = "none";
+        const mainContent = document.getElementById("mainContent");
+        mainContent.style.display = "flex";
+        setTimeout(() => { mainContent.style.opacity = "1"; }, 50);
+        
+        renderGreetings();
+    } else {
+        errEl.innerText = "Incorrect Credentials. Try again.";
+    }
+};
+
+// ==========================================
+// GREETINGS & SHEETY API INTEGRATION
+// ==========================================
+const SHEETY_API_URL = "https://api.sheety.co/d085eb98fe3832247bd18be97eebcba2/birthdayGreetingsMessages/sheet1";
+
+window.submitGreeting = async function() {
+    const nameEl = document.getElementById("greetName");
+    const msgEl = document.getElementById("greetMsg");
+    const submitBtn = document.querySelector(".greetings-form-container button");
+    
+    if (!nameEl.value || !msgEl.value) {
+        alert("Please fill in both your name and message! 💕");
+        return;
+    }
+
+    if(submitBtn) { submitBtn.disabled = true; submitBtn.innerText = "Sending..."; }
+
+    // Structure mapped to CamelCase columns in Sheety based on headers
+    const payload = {
+        sheet1: {
+            name: nameEl.value,
+            message: msgEl.value,
+            timestamp: new Date().toLocaleString()
+        }
+    };
+
+    try {
+        const response = await fetch(SHEETY_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            nameEl.value = "";
+            msgEl.value = "";
+            alert("Thank you for your greetings! Akina would be happy to read it when this website unlocks for her on her upcoming birthday!");
+            renderGreetings(); 
+        } else {
+            alert("There was an error saving your message. Please try again.");
+        }
+    } catch (error) {
+        console.error("Submission error:", error);
+        alert("Network error. Failed to send greeting.");
+    } finally {
+        if(submitBtn) { submitBtn.disabled = false; submitBtn.innerText = "Submit Message"; }
+    }
+};
+
+window.renderGreetings = async function() {
+    const display = document.getElementById("greetingsDisplay");
+    if (!display) return;
+
+    display.innerHTML = "<p style='color:#888; font-style:italic; font-size: 0.9rem;'>Loading messages... 💌</p>";
+
+    try {
+        const response = await fetch(SHEETY_API_URL);
+        const data = await response.json();
+        
+        const greetings = data.sheet1 || [];
+        
+        if (greetings.length === 0) {
+            display.innerHTML = "<p style='color:#888; font-style:italic; font-size: 0.9rem;'>No messages yet. They are still waiting to be written!</p>";
+            return;
+        }
+        
+        display.innerHTML = "";
+        
+        // Reverse array to show latest greeting at the top
+        [...greetings].reverse().forEach(g => {
+            const card = document.createElement("div");
+            card.className = "greeting-card";
+            
+            // Handle potentially empty/undefined rows returned from Sheety
+            const gName = g.name || "Anonymous";
+            const gMsg = g.message || "";
+            const gTime = g.timestamp || "";
+            
+            card.innerHTML = `
+                <h4>${gName}</h4>
+                <p>${gMsg}</p>
+                <div style="font-size: 0.7rem; color: #aaa; margin-top: 5px;">${gTime}</div>
+            `;
+            display.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Error fetching greetings:", error);
+        display.innerHTML = "<p style='color:#d90429; font-style:italic; font-size: 0.9rem;'>Failed to load messages from the server. 😢</p>";
+    }
+};
 
 // ==========================================
 // LIGHTBOX GALLERY SYSTEM
@@ -119,18 +242,24 @@ const QUIZ_QUESTIONS = [
     {
         question: "When is your ultimate IVE bias Rei's birthday? 🎂",
         choices: ["February 3, 2004", "April 25, 2004", "July 16, 2004", "August 31, 2004"],
-        correct: 0 
+        correct: 0,
+        imgCorrect: "pics/rei-happy.jpg", 
+        imgWrong: "pics/rei-disappointed.jpg"
     },
     {
         question: "What were our sequential queue numbers when we met? 🎟️",
         choices: ["331 & 332", "333 & 334", "334 & 335", "335 & 336"],
         hint: "💡 Hint: Take a look at the wristbands in our first photo timeline entry!",
-        correct: 0 
+        correct: 0,
+        imgCorrect: "pics/rei-happy.jpg", 
+        imgWrong: "pics/rei-disappointed.jpg"
     },
     {
         question: "How old is Akina officially turning today on July 16th? ✨",
         choices: ["28 Years Old", "29 Years Old", "30 Years Old", "A timeless K-Pop Icon"],
-        correct: 2 
+        correct: 2,
+        imgCorrect: "pics/rei-happy.jpg", 
+        imgWrong: "pics/rei-disappointed.jpg"
     }
 ];
 
@@ -166,6 +295,26 @@ function loadQuizQuestion() {
     if (feedbackElem) feedbackElem.innerText = "";
 }
 
+// UNIVERSAL POPUP CONTROLLER
+window.showReactionPopup = function(imgSrc, title, desc, color, duration, callback) {
+    const pop = document.getElementById("dynamicReactionPop");
+    const img = document.getElementById("reactionImage");
+    const titleEl = document.getElementById("reactionTitle");
+    const descEl = document.getElementById("reactionDesc");
+    
+    img.src = imgSrc;
+    titleEl.innerText = title;
+    titleEl.style.color = color;
+    descEl.innerText = desc;
+    
+    pop.classList.remove("hidden");
+    
+    setTimeout(() => {
+        pop.classList.add("hidden");
+        if(callback) callback();
+    }, duration);
+};
+
 function handleChoiceSelection(selectedIdx, clickedBtn) {
     const feedback = document.getElementById("quizFeedback");
     const currentData = QUIZ_QUESTIONS[quizIndex];
@@ -180,137 +329,96 @@ function handleChoiceSelection(selectedIdx, clickedBtn) {
         feedback.className = "quiz-feedback-msg quiz-correct";
         feedback.innerText = "Correct! Spot on! 🎉";
         
-        setTimeout(() => {
+        // Show Happy Rei Popup!
+        showReactionPopup(currentData.imgCorrect, "CORRECT!", "Rei is proud of you! ✨", "#2a9d8f", 1600, () => {
             quizIndex++;
             if (quizIndex < QUIZ_QUESTIONS.length) {
                 loadQuizQuestion();
             } else {
                 handleQuizSuccess();
             }
-        }, 1200);
+        });
+
     } else {
         clickedBtn.classList.add("btn-error-shake");
         feedback.className = "quiz-feedback-msg quiz-wrong";
         feedback.innerText = "Ouch! Incorrect choice. Try that one again! 💕";
         
-        setTimeout(() => {
+        // Show Sad Rei Popup!
+        showReactionPopup(currentData.imgWrong, "WRONG ANSWER!", "Rei is sad, let's try again! 🥺", "#d90429", 1400, () => {
             clickedBtn.classList.remove("btn-error-shake");
             feedback.innerText = "";
             allBtns.forEach(b => b.style.pointerEvents = 'auto');
-        }, 800);
+        });
     }
 }
 
-// 🎮 REDIRECTS QUIZ SUCCESS STRAIGHT TO THE GAMES INSIDE GAMES.JS
 function handleQuizSuccess() {
-    const lockedState = document.getElementById("lockedState");
-    const arcadeState = document.getElementById("arcadeState"); // 🛠️ Reconciled ID mapping bug
-
-    // Hide the quiz panel layout
-    if (lockedState) {
-        lockedState.classList.add("hidden");
-        lockedState.style.display = "none";
-    }
-    
-    // Show the Arcade Arena frame wrapper layout
-    if (arcadeState) {
-        arcadeState.classList.remove("hidden");
-        arcadeState.style.display = "block";
-    }
-    
-    // Switch on the game engine kickoff code located inside games.js
-    if (typeof window.initArcadeChain === "function") {
-        console.log("Launching arcade games...");
-        window.initArcadeChain();
-    } else {
-        console.error("Critical Error: games.js failed to provide initArcadeChain!");
-        if (arcadeState) {
-            arcadeState.innerHTML += `<p style="color: red; font-weight: bold; padding: 10px;">Game engine error: games.js script file was not detected or failed to load.</p>`;
-        }
+    const quizBox = document.getElementById("quizContainer");
+    if (quizBox) {
+        quizBox.innerHTML = "<h3 style='color: #06d6a0; margin: 0;'>🎉 Access Granted! 🎉</h3><p style='color: #555; font-size: 0.9rem;'>Booting up Rei's Console System...</p>";
+        
+        setTimeout(() => {
+            document.getElementById("lockedState").classList.add("hidden");
+            document.getElementById("arcadeState").classList.remove("hidden");
+            
+            document.getElementById("arcadeState").style.display = "flex";
+            if (typeof window.initArcadeChain === "function") {
+                window.initArcadeChain();
+            } else {
+                console.warn("initArcadeChain missing!");
+                window.handleActualGiftUnlock();
+            }
+        }, 1500);
     }
 }
 
-// Master layout opener called once games are completely cleared by games.js
+// CALLED BY crosswalk-cat.js WHEN STAGE 2 IS BEATEN
 window.handleActualGiftUnlock = function() {
-    const unlockedState = document.getElementById("unlockedState");
-    const giftContainer = document.getElementById("giftContainer");
-    const arcadeState = document.getElementById("arcadeState"); // 🛠️ Reconciled ID mapping bug
+    document.getElementById("arcadeState").classList.add("hidden");
+    document.getElementById("arcadeState").style.display = "none";
+    document.getElementById("unlockedState").classList.remove("hidden");
     
-    if (arcadeState) {
-        arcadeState.classList.add("hidden");
-        arcadeState.style.display = "none";
-    }
-    if (giftContainer) {
-        giftContainer.style.borderColor = "#2a9d8f";
-        giftContainer.style.transform = "scale(1.02)";
-    }
-    if (unlockedState) {
-        unlockedState.classList.remove("hidden");
-        unlockedState.style.display = "block";
+    // Quick burst of Reis on unlock!
+    const unlockContainer = document.getElementById("mainReiBg");
+    if (unlockContainer) {
+        for (let i = 0; i < 20; i++) {
+            const tempRei = document.createElement("div");
+            tempRei.className = `rei-plush bubble-${((i) % 10) + 1}`;
+            tempRei.style.animationDuration = "2s"; 
+            unlockContainer.appendChild(tempRei);
+            setTimeout(() => { if (tempRei.parentNode) tempRei.parentNode.removeChild(tempRei); }, 2500);
+        }
     }
 };
 
-// ==========================================
-// MASTER INITIALIZATION & CONTROLLERS
-// ==========================================
-window.addEventListener("DOMContentLoaded", async () => {
-    if (!IS_DRY_RUN) {
-        await syncSecureTime();
-    }
+window.triggerGiftHint = function() {
+    alert("Crack the 3 trivia questions below to open this gift box! 🌸");
+};
 
-    if (IS_DRY_RUN) {
-        const badge = document.createElement("div");
-        badge.innerHTML = "🔧 Dry Run Active (Countdown Bypassed)";
-        badge.style.position = "fixed";
-        badge.style.top = "10px";
-        badge.style.left = "10px";
-        badge.style.background = "rgba(0, 0, 0, 0.8)";
-        badge.style.color = "#ff758f";
-        badge.style.padding = "6px 12px";
-        badge.style.borderRadius = "30px";
-        badge.style.fontSize = "11px";
-        badge.style.fontWeight = "bold";
-        badge.style.zIndex = "100000";
-        document.body.appendChild(badge);
-        
-        hideCountdownLock();
-    }
+// ==========================================
+// INITIALIZATION
+// ==========================================
+document.addEventListener("DOMContentLoaded", async () => {
+    generateFloatingReis();
+    await syncSecureTime();
 
-    const galleryElems = document.querySelectorAll(".gallery-img");
-    galleryElems.forEach((img, index) => {
+    // Populate images for gallery
+    const galleryImages = document.querySelectorAll('.gallery-img');
+    galleryImages.forEach((img, idx) => {
         allImages.push(img.src);
         img.style.cursor = "pointer";
-        img.addEventListener("click", () => {
-            openLightbox(index);
-        });
+        img.addEventListener('click', () => openLightbox(idx));
     });
 
-    const lbModal = document.getElementById("lightboxModal");
-    if (lbModal) {
-        lbModal.addEventListener("click", function(e) {
-            if (e.target === this) closeLightbox();
+    // Close lightbox background click
+    const modal = document.getElementById("lightboxModal");
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeLightbox();
         });
     }
-
+    
+    // Load first question if on main page
     loadQuizQuestion();
 });
-
-window.addEventListener('click', (e) => {
-    if (e.target.classList.contains('choice-btn')) return;
-
-    const burst = document.createElement('div');
-    burst.className = 'click-burst';
-    burst.style.left = `${e.clientX}px`;
-    burst.style.top = `${e.clientY}px`;
-    
-    document.body.appendChild(burst);
-    setTimeout(() => { burst.remove(); }, 500);
-});
-
-function triggerGiftHint() {
-    const giftIcon = document.querySelector('.gift-box-animated');
-    if (!giftIcon) return;
-    
-    giftIcon.classList.add('gift-bounce');
-    setTimeout(() => { giftIcon.classList.remove('gift-bounce'); }, 400);
-}

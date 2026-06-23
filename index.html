@@ -10,28 +10,27 @@
 </head>
 <body>
 
-    <div class="rei-bg-layer">
-        <div class="rei-plush bubble-1"></div>
-        <div class="rei-plush bubble-2"></div>
-        <div class="rei-plush bubble-3"></div>
-        <div class="rei-plush bubble-4"></div>
-        <div class="rei-plush bubble-5"></div>
-        <div class="rei-plush bubble-6"></div>
-        <div class="rei-plush bubble-7"></div>
-        <div class="rei-plush bubble-8"></div>
-    </div>
+    <!-- AUDIO DECLARATIONS ⚠️ Make sure these paths are correct! -->
+    <audio id="flappyBgMusic" src="music/flappy-bg.mp3" loop></audio>
+    <audio id="flappyTapSound" src="music/flappy-bird-fly.mp3"></audio>
+    <!-- NEW FLAPPY SOUNDS -->
+    <audio id="flappyPointSound" src="music/flappy-bird-point.mp3"></audio>
+    <audio id="flappyPowerupSound" src="music/flappy-powerup.mp3"></audio>
+    <audio id="flappyDieSound" src="music/flappy-bird-die.mp3"></audio>
+    <audio id="flappyWinSound" src="music/ack.mp3"></audio>
 
+    <audio id="catBgMusic" src="music/cat-bg.mp3" loop></audio>
+    <audio id="catMoveSound" src="music/oiia-oiia-sound.mp3"></audio>
+    <!-- NEW CAT GAME SOUNDS -->
+    <audio id="catDieSound" src="music/sad-meow-song.mp3"></audio>
+    <audio id="catWinSound" src="music/anime-wow-sound-effect-mp3cut.mp3"></audio>
+
+    <!-- JS WILL INJECT FLOATING REIS HERE -->
+    <div id="mainReiBg" class="rei-bg-layer"></div>
+
+    <!-- TIMER LOCK SCREEN -->
     <div id="countdownLockScreen" class="lock-overlay" style="overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 10px;">
-        <div class="rei-bg-layer" style="z-index: 10001;">
-            <div class="rei-plush bubble-1"></div>
-            <div class="rei-plush bubble-2"></div>
-            <div class="rei-plush bubble-3"></div>
-            <div class="rei-plush bubble-4"></div>
-            <div class="rei-plush bubble-5"></div>
-            <div class="rei-plush bubble-6"></div>
-            <div class="rei-plush bubble-7"></div>
-            <div class="rei-plush bubble-8"></div>
-        </div>
+        <div id="lockReiBg" class="rei-bg-layer" style="z-index: 10001;"></div>
         <div class="lock-content" style="max-width: 100%; width: 100%; margin: 0 auto; display: flex; flex-direction: column; align-items: center;">
             <div class="timer-profile-wrapper">
                 <img src="pics/akina.jpg" alt="Akina" class="profile-pic timer-pic">
@@ -45,10 +44,19 @@
             </div>
             <p style="margin-bottom: 10px; font-size: 0.9rem; padding: 0 10px;">Counting down to Akina's 30th birthday in JST 🌸</p>
 
-            <button id="openPracticeBtn" onclick="startPracticeMode()" style="margin-top: 10px; padding: 12px 24px; background: #ff758f; color: white; border: none; border-radius: 25px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 117, 143, 0.4); transition: transform 0.2s; -webkit-tap-highlight-color: transparent;">
+            <!-- GREETINGS SUBMIT FORM -->
+            <div class="greetings-form-container">
+                <h3>Drop a Birthday Greeting! 💌</h3>
+                <input type="text" id="greetName" placeholder="Your Name">
+                <textarea id="greetMsg" placeholder="Write your birthday message..." rows="2"></textarea>
+                <button onclick="submitGreeting()">Submit Message</button>
+            </div>
+
+            <button id="openPracticeBtn" onclick="startPracticeMode()" class="practice-btn">
                 🎮 Try Arcade Practice Mode
             </button>
 
+            <!-- PRACTICE ARENA -->
             <div id="practiceArena" class="hidden" style="background: #1a1a2e; padding: 15px 10px; border-radius: 20px; border: 3px solid #ff758f; margin-top: 20px; width: 100%; max-width: 340px; box-sizing: border-box; position: relative; z-index: 10002; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <h3 style="color: #ff758f; margin-top: 0; margin-bottom: 5px; font-size: 1.1rem; letter-spacing: 1px;">🎮 Practice Arena 🎮</h3>
                 <p id="practiceStatus" style="color: #fff; font-size: 0.8rem; margin-bottom: 12px; text-align: center;">Get ready to practice!</p>
@@ -77,6 +85,19 @@
         </div>
     </div>
 
+    <!-- SECURE LOGIN SCREEN -->
+    <div id="loginScreen" class="lock-overlay hidden" style="z-index: 10005;">
+        <div class="login-container">
+            <h2>Authorized Access Only 🔐</h2>
+            <p>Please enter your special credentials to enter the main page.</p>
+            <input type="text" id="loginUser" placeholder="Username">
+            <input type="password" id="loginPass" placeholder="Password">
+            <button onclick="processLogin()">Enter</button>
+            <p id="loginError" style="color: #d90429; font-size: 0.85rem; margin-top: 10px; font-weight: bold;"></p>
+        </div>
+    </div>
+
+    <!-- MAIN PAGE CONTENT -->
     <main class="main-wrapper" id="mainContent" style="display: none; opacity: 0;">
         
         <header class="hero-section">
@@ -89,6 +110,14 @@
                 </div>
             </div>
         </header>
+
+        <!-- SUBMITTED GREETINGS SECTION -->
+        <section class="content-section">
+            <h2>Birthday Messages 💌</h2>
+            <div id="greetingsDisplay" class="greetings-list">
+                <!-- Javascript will load messages here -->
+            </div>
+        </section>
 
         <section class="content-section">
             <h2>Our Story Timeline 🗺️</h2>
@@ -248,6 +277,16 @@
         <button class="lightbox-nav next" onclick="changeLightboxImage(1)">&#10095;</button>
     </div>
 
+    <!-- ⚠️ DYNAMIC REACTION POPUP (For Quiz & Flappy Win) ⚠️ -->
+    <div id="dynamicReactionPop" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s;">
+        <div style="background: white; padding: 25px; border-radius: 15px; text-align: center; max-width: 85%; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <img id="reactionImage" src="" alt="Reaction" style="max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; margin-bottom: 12px;">
+            <h3 id="reactionTitle" style="color: #d90429; margin: 0 0 5px; font-size: 1.2rem;">Title</h3>
+            <p id="reactionDesc" style="color: #555; margin: 0; font-size: 0.9rem; font-weight: 500;">Desc</p>
+        </div>
+    </div>
+
+    <!-- (Old Flappy Loss Meme remains for legacy use by flappy-rei.js) -->
     <div id="reiDisappointedPop" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
         <div style="background: white; padding: 25px; border-radius: 15px; text-align: center; max-width: 85%; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
             <img src="pics/rei-disappointed.jpg" alt="Rei is checking your skills" style="max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; margin-bottom: 12px;">
