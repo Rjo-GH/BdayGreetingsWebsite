@@ -24,7 +24,6 @@
     <!-- NEW CAT GAME SOUNDS -->
     <audio id="catDieSound" src="music/sad-meow-song.mp3"></audio>
     <audio id="catWinSound" src="music/anime-wow-sound-effect-mp3cut.mp3"></audio>
-
     <!-- JS WILL INJECT FLOATING REIS HERE -->
     <div id="mainReiBg" class="rei-bg-layer"></div>
 
@@ -53,12 +52,12 @@
             </div>
 
             <button id="openPracticeBtn" onclick="startPracticeMode()" class="practice-btn">
-                🎮 Try Arcade Practice Mode
+                🎮 Try Games Practice Mode 🎮
             </button>
 
             <!-- PRACTICE ARENA -->
             <div id="practiceArena" class="hidden" style="background: #1a1a2e; padding: 15px 10px; border-radius: 20px; border: 3px solid #ff758f; margin-top: 20px; width: 100%; max-width: 340px; box-sizing: border-box; position: relative; z-index: 10002; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <h3 style="color: #ff758f; margin-top: 0; margin-bottom: 5px; font-size: 1.1rem; letter-spacing: 1px;">🎮 Practice Arena 🎮</h3>
+                <h3 style="color: #ff758f; margin-top: 0; margin-bottom: 5px; font-size: 1.1rem; letter-spacing: 1px;">🎮 Play a Game 🎮</h3>
                 <p id="practiceStatus" style="color: #fff; font-size: 0.8rem; margin-bottom: 12px; text-align: center;">Get ready to practice!</p>
                 
                 <div id="practiceFlappyStage" class="hidden" style="width: 100%; text-align: center;">
@@ -78,6 +77,18 @@
                         </div>
                         <button onclick="moveCat('down')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 70px; -webkit-tap-highlight-color: transparent;">▼ Down</button>
                     </div>
+                </div>
+
+                <div id="practiceBadmintonStage" class="hidden" style="width: 100%; text-align: center;">
+                    <h4 style="color: #fff; margin-bottom: 8px; margin-top: 0; font-size: 0.9rem;">Badminton Smash!</h4>
+                    <div id="practiceBadmintonCanvasContainer" style="display: flex; justify-content: center; align-items: center; border: 2px solid #fff; border-radius: 8px; background: #c6f7e2; overflow: hidden; margin: 0 auto; width: 320px; max-width: 100%;"></div>
+                    <p style="color: #fff; font-size: 0.8rem; margin-top: 12px;">Move the paddle left and right to keep the shuttlecock in play.</p>
+                </div>
+
+                <div id="practiceMemoryStage" class="hidden" style="width: 100%; text-align: center;">
+                    <h4 style="color: #fff; margin-bottom: 8px; margin-top: 0; font-size: 0.9rem;">Memory Match!</h4>
+                    <div id="practiceMemoryBoard" style="display: grid; grid-template-columns: repeat(4, minmax(60px, 1fr)); gap: 10px; justify-items: center; width: 100%; max-width: 320px; margin: 0 auto;"></div>
+                    <p style="color: #fff; font-size: 0.8rem; margin-top: 12px;">Tap cards to reveal and match the cute cat pictures.</p>
                 </div>
 
                 <button onclick="closePracticeMode()" style="margin-top: 15px; background: transparent; color: #bbb; border: none; text-decoration: underline; cursor: pointer; font-size: 0.8rem; padding: 5px 15px; -webkit-tap-highlight-color: transparent;">Close Practice</button>
@@ -176,6 +187,8 @@
 
             </div>
         </section>
+
+        <!-- Mini Games section removed from the main page per request -->
         
         <section class="content-section">
             <h2>A Little Send-Off Surprise ✈️🌸</h2>
@@ -195,7 +208,7 @@
                 <div id="lockedState" class="gift-state">
                     <div class="gift-box-animated" onclick="triggerGiftHint()">🎁</div>
                     <h2>A Special Birthday Surprise</h2>
-                    <p style="margin-bottom: 20px;">Answer these 3 personal trivia questions to crack the lock and open your birthday gift blowout! 🌸</p>
+                    <p style="margin-bottom: 20px;">Complete every step in order: quiz → Flappy Rei → Cat Game → Memory Match, then unlock the birthday gift! 🌸</p>
                     
                     <div id="quizContainer" class="quiz-box">
                         <div class="quiz-progress">Question <span id="currentQuestionNum">1</span> of 3</div>
@@ -236,6 +249,12 @@
                             <p class="control-tip" style="color: #ffccd5; font-size: 0.8rem; margin-top: 12px; margin-bottom: 0;">💡 Use Arrow Keys / WASD / Buttons</p>
                         </div>
 
+                        <div id="memoryStage" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <h4 style="color: #fff; margin-bottom: 12px; margin-top: 5px; font-size: 1rem; font-weight: bold; letter-spacing: 0.5px;">Memory Match Stage 🧠</h4>
+                            <p style="color: #cbd5e1; font-size:0.9rem; margin: 0 0 12px 0; max-width: 300px;">Match all pairs to unlock the gift.</p>
+                            <div id="memoryBoard" style="display: grid; grid-template-columns: repeat(4, minmax(60px, 1fr)); gap: 10px; justify-items: center; width: 100%; max-width: 320px; margin: 0 auto;"></div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -243,19 +262,17 @@
                     <div class="ribbon-banner">🎉 UNLOCKED 🎉</div>
                     <h2>Happy 30th Birthday, Akina!</h2>
                     <p class="gift-subtext">Sent with love via GCash</p>
-                    
-                    <div class="qr-container">
-                        <img src="pics/sample qr rjo.jpg" alt="GCash QR Code" class="qr-code">
+
+                    <!-- QR removed for manual transfer workflow. Owner will be notified when celebrant finishes the games. -->
+                    <div id="unlockNotice" style="text-align:center; padding: 12px;">
+                        <p id="ownerNotifyText" style="color:#06d6a0; font-weight:700; margin: 6px 0;">Celebrant finished the games — owner will be notified.</p>
+                        <p id="unlockManualNote" style="color:#666; font-size:0.9rem; margin: 6px 0;">The QR code has been hidden to avoid accidental transfers. You will receive a notification in the linked Google Sheet. Manually finalize the transfer when ready.</p>
                     </div>
                     
-                    <div>
-                        <a href="pics/sample qr rjo.jpg" download="Akina-Birthday-GCashQR.png" class="download-btn">
-                            📥 Save QR to Camera Roll
-                        </a>
+                    <div style="display:flex; gap:10px; justify-content:center; align-items:center; margin-top:8px;">
+                        <button id="ownerMarkDone" style="background:#ff758f; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">Mark as Sent</button>
+                        <a id="viewSheetLink" href="#" target="_blank" style="color:#2b2d42; text-decoration:underline;">Open Notifications Sheet</a>
                     </div>
-                    
-                    <div class="gift-amount">₱3,000</div>
-                    <p class="instructions">Tap the button above to save the QR to your phone, then open GCash and upload the image to instantly claim your birthday blowout! 🎂</p>
                 </div>
 
             </div>
@@ -266,6 +283,7 @@
     <script src="arcade-state.js"></script>
     <script src="flappy-rei.js"></script>
     <script src="crosswalk-cat.js"></script>
+    <script src="memory-game.js"></script>
     <script src="script.js"></script>
     
     <div id="lightboxModal" class="lightbox">

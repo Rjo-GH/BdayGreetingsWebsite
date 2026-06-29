@@ -1,7 +1,7 @@
 // ==========================================
 // CONFIGURATION & SECURITY MANAGEMENT
 // ==========================================
-const IS_DRY_RUN = false; 
+const IS_DRY_RUN = true; 
 
 // ⚙️ REI CONFIGURATION: Adjust how many floating Rei's appear!
 const NUM_ROTATING_REIS = 30; 
@@ -21,6 +21,169 @@ function generateFloatingReis() {
 
 const TARGET_DATE_JST = new Date("2026-07-16T00:00:00+09:00").getTime();
 let serverTimeOffset = 0;
+let countdownUnlocked = false;
+const LOGIN_HASH = "199412cc1ff69271c01e1f96b80884842e0d4d78562d2419e46093abdbce306a";
+const ADMIN_HASH = "bf6b5bdb74c79ece9fc0ad0ac9fb0359f9555d4f35a83b2e6ec69ae99e09603d"; // admin:admin123
+const REACTION_STORAGE_KEY = "birthdayGreetingReactions";
+const REACTION_TYPES = [
+    { id: "love", emoji: "❤️", label: "Love" },
+    { id: "sparkle", emoji: "🎉", label: "Sparkle" },
+    { id: "cute", emoji: "🥰", label: "Cute" }
+];
+
+function encodeTextForStorage(text) {
+    return btoa(unescape(encodeURIComponent(text)));
+}
+
+function buildGreetingKey(item) {
+    const keySource = `${item.name || 'Anonymous'}|${item.message || ''}|${item.timestamp || ''}`;
+    return encodeTextForStorage(keySource);
+}
+
+function loadReactionStorage() {
+    try {
+        return JSON.parse(localStorage.getItem(REACTION_STORAGE_KEY)) || {};
+    } catch (err) {
+        console.warn("Unable to read reaction storage:", err);
+        return {};
+    }
+}
+
+function saveReactionStorage(data) {
+    localStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(data));
+}
+
+function getReactionCounts(key) {
+    const storage = loadReactionStorage();
+    const stored = storage[key] || {};
+    return REACTION_TYPES.reduce((acc, type) => {
+        acc[type.id] = stored[type.id] || 0;
+        return acc;
+    }, {});
+}
+
+function updateReactionCountsInRow(row, counts) {
+    row.querySelectorAll('.reaction-btn').forEach((btn) => {
+        const reactionId = btn.dataset.reactionId;
+        const countSpan = btn.querySelector('.reaction-count');
+        if (reactionId && countSpan) {
+            countSpan.innerText = counts[reactionId] || 0;
+        }
+    });
+}
+
+async function updateGreetingReaction(key, reactionId, row) {
+    // Prefer server-backed update when row has an associated Sheety row id
+    const rowId = row && row.dataset && row.dataset.rowId;
+    if (rowId) {
+        try {
+            // Read current server counts
+            const res = await fetch(`${SHEETY_API_URL}/${rowId}`);
+            if (res.ok) {
+                const data = await res.json();
+                const serverRow = data.sheet1 || {};
+                const updated = {};
+                REACTION_TYPES.forEach(t => {
+                    const col = `reaction_${t.id}`;
+                    const current = parseInt(serverRow[col] || 0, 10);
+                    updated[col] = current + (t.id === reactionId ? 1 : 0);
+                });
+
+                const payload = { sheet1: updated };
+                const patchRes = await fetch(`${SHEETY_API_URL}/${rowId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (patchRes.ok) {
+                    // Update UI with new counts from server response
+                    const patched = await patchRes.json();
+                    const patchedRow = patched.sheet1 || {};
+                    const counts = {};
+                    REACTION_TYPES.forEach(t => counts[t.id] = patchedRow[`reaction_${t.id}`] || 0);
+                    updateReactionCountsInRow(row, counts);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.warn('Server reaction update failed, queuing locally', err);
+            // fall through to local queue
+        }
+
+        // Queue fallback for later retry
+        const q = JSON.parse(localStorage.getItem('sheetyReactionQueue') || '[]');
+        q.push({ rowId, reactionId, ts: new Date().toISOString() });
+        localStorage.setItem('sheetyReactionQueue', JSON.stringify(q));
+    }
+
+    // Fallback: localStorage optimistic update
+    const storage = loadReactionStorage();
+    const counts = storage[key] || {};
+    counts[reactionId] = (counts[reactionId] || 0) + 1;
+    storage[key] = counts;
+    saveReactionStorage(storage);
+    updateReactionCountsInRow(row, getReactionCounts(key));
+}
+
+function createReactionRow(key) {
+    const counts = getReactionCounts(key);
+    const row = document.createElement('div');
+    row.className = 'reaction-row';
+
+    // row.dataset.rowId is set by renderGreetings when available
+
+    REACTION_TYPES.forEach((type) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'reaction-btn';
+        btn.dataset.reactionId = type.id;
+        btn.title = `React with ${type.label}`;
+        btn.innerHTML = `
+            <span class="reaction-emoji">${type.emoji}</span>
+            <span class="reaction-count">${counts[type.id] || 0}</span>
+        `;
+        btn.onclick = () => updateGreetingReaction(key, type.id, row);
+        row.appendChild(btn);
+    });
+
+    const label = document.createElement('div');
+    label.className = 'reaction-label';
+    label.innerText = 'React to this wish 💖';
+    row.appendChild(label);
+    return row;
+}
+
+async function digestMessage(message) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer))
+        .map((byte) => byte.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+function formatCountdownText(distance) {
+    const days = String(Math.floor(distance / (1000 * 60 * 60 * 24))).padStart(2, '0');
+    const hours = String(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+    const minutes = String(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+    const seconds = String(Math.floor((distance % (1000 * 60)) / 1000)).padStart(2, '0');
+    return `Secure unlock available in ${days}d ${hours}h ${minutes}m ${seconds}s`;
+}
+
+function updateCountdownStatus(distance) {
+    const statusEl = document.getElementById("countdownStatus");
+    if (!statusEl) return;
+    if (distance > 0) {
+        statusEl.innerText = formatCountdownText(distance);
+    } else {
+        statusEl.innerText = "Secure unlock ready. Please enter your special credentials.";
+    }
+}
+
+async function hashLogin(username, password) {
+    return await digestMessage(`${username}:${password}`);
+}
 
 async function syncSecureTime() {
     try {
@@ -47,11 +210,13 @@ const countdownInterval = setInterval(() => {
     const distance = TARGET_DATE_JST - currentSecureTime;
 
     if (distance <= 0) {
+        countdownUnlocked = true;
         clearInterval(countdownInterval);
         hideCountdownLock();
         return;
     }
 
+    updateCountdownStatus(distance);
     const dElem = document.getElementById("days");
     const hElem = document.getElementById("hours");
     const mElem = document.getElementById("minutes");
@@ -81,20 +246,50 @@ function hideCountdownLock() {
 // ==========================================
 // SECURE LOGIN SYSTEM 
 // ==========================================
-window.processLogin = function() {
+window.processLogin = async function() {
     const userEl = document.getElementById("loginUser").value.trim().toLowerCase();
     const passEl = document.getElementById("loginPass").value.trim();
     const errEl = document.getElementById("loginError");
+    const loginBtn = document.querySelector("#loginScreen button");
 
-    if (btoa(userEl) === "YWtpbmE=" && btoa(passEl) === "ZGl2ZTIwMjY=") {
+    if (!userEl || !passEl) {
+        errEl.innerText = "Enter both username and password to continue.";
+        return;
+    }
+
+    if (loginBtn) {
+        loginBtn.disabled = true;
+        loginBtn.innerText = "Checking...";
+    }
+
+    const candidateHash = await hashLogin(userEl, passEl);
+    const isAdmin = candidateHash === ADMIN_HASH;
+    const isValid = candidateHash === LOGIN_HASH || isAdmin;
+
+    if (!countdownUnlocked && !isAdmin) {
+        if (loginBtn) {
+            loginBtn.disabled = false;
+            loginBtn.innerText = "Enter";
+        }
+        errEl.innerText = "Birthday unlock is not ready yet. Please wait until July 16.";
+        return;
+    }
+
+    if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.innerText = "Enter";
+    }
+
+    if (isValid) {
         document.getElementById("loginScreen").style.display = "none";
         const mainContent = document.getElementById("mainContent");
-        mainContent.style.display = "flex";
-        setTimeout(() => { mainContent.style.opacity = "1"; }, 50);
-        
+        if (mainContent) {
+            mainContent.style.display = "flex";
+            setTimeout(() => { mainContent.style.opacity = "1"; }, 50);
+        }
         renderGreetings();
     } else {
-        errEl.innerText = "Incorrect Credentials. Try again.";
+        errEl.innerText = "Incorrect credentials. Try again.";
     }
 };
 
@@ -102,6 +297,7 @@ window.processLogin = function() {
 // GREETINGS & SHEETY API INTEGRATION
 // ==========================================
 const SHEETY_API_URL = "https://api.sheety.co/d085eb98fe3832247bd18be97eebcba2/birthdayGreetingsMessages/sheet1";
+const SHEETY_NOTIFICATIONS_URL = "https://api.sheety.co/d085eb98fe3832247bd18be97eebcba2/birthdayGreetingsMessages/notifications";
 
 window.submitGreeting = async function() {
     const nameEl = document.getElementById("greetName");
@@ -175,12 +371,25 @@ window.renderGreetings = async function() {
             const gName = g.name || "Anonymous";
             const gMsg = g.message || "";
             const gTime = g.timestamp || "";
-            
+            const messageKey = buildGreetingKey({ name: gName, message: gMsg, timestamp: gTime });
+
+            // If Sheety exposes reaction columns, prefer server counts
+            const serverCounts = {};
+            REACTION_TYPES.forEach(t => { serverCounts[t.id] = g[`reaction_${t.id}`] || 0; });
+
             card.innerHTML = `
                 <h4>${gName}</h4>
                 <p>${gMsg}</p>
                 <div style="font-size: 0.7rem; color: #aaa; margin-top: 5px;">${gTime}</div>
             `;
+            const reactionRow = createReactionRow(messageKey);
+            // Attach Sheety row id so reactions can be updated server-side when possible
+            if (g.id) reactionRow.dataset.rowId = g.id;
+            // If serverCounts provided, set them on the row UI
+            if (Object.values(serverCounts).some(v => v > 0)) {
+                updateReactionCountsInRow(reactionRow, serverCounts);
+            }
+            card.appendChild(reactionRow);
             display.appendChild(card);
         });
     } catch (error) {
@@ -234,6 +443,15 @@ window.addEventListener("keydown", (e) => {
         if (e.key === "Escape") closeLightbox();
     }
 });
+
+window.launchMemoryGame = function() {
+    if (document.getElementById("practiceArena").classList.contains("hidden")) {
+        window.startPracticeMode();
+        setTimeout(() => window.switchPracticeStage(3), 120);
+    } else {
+        window.switchPracticeStage(3);
+    }
+};
 
 // ==========================================
 // DYNAMIC TRIVIA QUIZ SYSTEM
@@ -390,7 +608,112 @@ window.handleActualGiftUnlock = function() {
             setTimeout(() => { if (tempRei.parentNode) tempRei.parentNode.removeChild(tempRei); }, 2500);
         }
     }
+
+    // Attempt to notify owner via Sheety and update the unlock notice
+    (async () => {
+        const notifyTextEl = document.getElementById('ownerNotifyText');
+        if (notifyTextEl) notifyTextEl.innerText = 'Notifying owner...';
+        const ok = await notifyOwnerViaSheety('auto_unlock', { source: 'client' });
+        if (notifyTextEl) {
+            if (ok) notifyTextEl.innerText = 'Celebrant finished the games — owner notified.';
+            else notifyTextEl.innerText = 'Celebrant finished — failed to notify owner. Will retry automatically.';
+        }
+    })();
 };
+
+// Notify owner via Sheety notifications sheet
+async function notifyOwnerViaSheety(messageKey, meta = {}) {
+    try {
+        const payload = { notifications: { messageKey: messageKey || '', type: 'unlock', status: 'celebrant_finished', timestamp: new Date().toISOString(), meta: JSON.stringify(meta) } };
+        const res = await fetch(SHEETY_NOTIFICATIONS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return res.ok;
+    } catch (err) {
+        console.error('Notify owner failed:', err);
+        // queue locally for retry
+        const q = JSON.parse(localStorage.getItem('sheetyNotifyQueue') || '[]');
+        q.push({ messageKey, meta, ts: new Date().toISOString() });
+        localStorage.setItem('sheetyNotifyQueue', JSON.stringify(q));
+        return false;
+    }
+}
+
+// Flush queued notifications
+async function flushSheetyNotifyQueue() {
+    const q = JSON.parse(localStorage.getItem('sheetyNotifyQueue') || '[]');
+    if (!Array.isArray(q) || q.length === 0) return;
+    const remaining = [];
+    for (const item of q) {
+        try {
+            const ok = await notifyOwnerViaSheety(item.messageKey, item.meta || {});
+            if (!ok) remaining.push(item);
+        } catch (e) { remaining.push(item); }
+    }
+    localStorage.setItem('sheetyNotifyQueue', JSON.stringify(remaining));
+}
+
+// Helper to update reaction counts in an existing reaction row element
+function updateReactionCountsInRow(rowEl, counts) {
+    try {
+        const buttons = rowEl.querySelectorAll('.reaction-btn');
+        buttons.forEach(btn => {
+            const id = btn.dataset.reactionId;
+            if (counts[id] !== undefined) {
+                const badge = btn.querySelector('.reaction-count');
+                if (badge) badge.innerText = counts[id];
+            }
+        });
+    } catch (e) { console.warn('updateReactionCountsInRow failed', e); }
+}
+
+// Flush queued reaction updates
+async function flushSheetyReactionQueue() {
+    const q = JSON.parse(localStorage.getItem('sheetyReactionQueue') || '[]');
+    if (!Array.isArray(q) || q.length === 0) return;
+    const remaining = [];
+    for (const item of q) {
+        try {
+            const { rowId, reactionId } = item;
+            const res = await fetch(`${SHEETY_API_URL}/${rowId}`);
+            if (!res.ok) { remaining.push(item); continue; }
+            const data = await res.json();
+            const serverRow = data.sheet1 || {};
+            const updated = {};
+            REACTION_TYPES.forEach(t => {
+                const col = `reaction_${t.id}`;
+                const current = parseInt(serverRow[col] || 0, 10);
+                updated[col] = current + (t.id === reactionId ? 1 : 0);
+            });
+            const patchRes = await fetch(`${SHEETY_API_URL}/${rowId}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sheet1: updated })
+            });
+            if (!patchRes.ok) remaining.push(item);
+        } catch (e) { remaining.push(item); }
+    }
+    localStorage.setItem('sheetyReactionQueue', JSON.stringify(remaining));
+}
+
+// Wire owner mark-as-sent button and flush queue on load
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('ownerMarkDone');
+    const link = document.getElementById('viewSheetLink');
+    if (btn) {
+        btn.addEventListener('click', async () => {
+            btn.disabled = true; btn.innerText = 'Marking...';
+            await notifyOwnerViaSheety('manual_owner_mark', { manual: true });
+            btn.innerText = 'Marked';
+            setTimeout(() => { btn.disabled = false; btn.innerText = 'Mark as Sent'; }, 3000);
+        });
+    }
+    if (link) {
+        link.href = 'https://docs.google.com/spreadsheets/';
+    }
+    flushSheetyNotifyQueue();
+    flushSheetyReactionQueue();
+});
 
 window.triggerGiftHint = function() {
     alert("Crack the 3 trivia questions below to open this gift box! 🌸");

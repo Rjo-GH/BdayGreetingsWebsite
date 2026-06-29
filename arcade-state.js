@@ -12,6 +12,7 @@ window.initArcadeChain = function() {
     
     document.getElementById("flappyStage").classList.remove("hidden");
     document.getElementById("crosswalkStage").classList.add("hidden");
+    document.getElementById("memoryStage").classList.add("hidden");
     
     if (typeof initFlappyGame === "function") initFlappyGame();
 };
@@ -39,8 +40,8 @@ function setupPracticeNavigation() {
     statusEl.style.marginBottom = "15px";
 
     const label = document.createElement("div");
-    label.innerText = "🛠️ PRACTICE TESTING AREA (SELECT GAME):";
-    label.style.fontSize = "11px";
+    label.innerText = "🛠️ PRACTICE MENU: Flappy Rei → Cat Game → Memory";
+    label.style.fontSize = "10px";
     label.style.fontWeight = "bold";
     label.style.color = "#aaa";
     
@@ -50,18 +51,25 @@ function setupPracticeNavigation() {
     
     const btn1 = document.createElement("button");
     btn1.id = "btnSelectPracticeFlappy";
-    btn1.innerText = "🕹️ Play Flappy Rei Game"; /* TWEAKED TEXT */
-    btn1.style.cssText = "padding: 6px 12px; font-size: 12px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; background: #ff758f; color: white;";
+    btn1.innerText = "🕹️ Flappy Rei";
+    btn1.style.cssText = "padding: 5px 10px; font-size: 10px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; background: #ff758f; color: white;";
     btn1.onclick = () => window.switchPracticeStage(1);
     
     const btn2 = document.createElement("button");
     btn2.id = "btnSelectPracticeCrosswalk";
-    btn2.innerText = "🐱 Play Cat Game";
-    btn2.style.cssText = "padding: 6px 12px; font-size: 12px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; background: #2b2d42; color: white; border: 1px solid #8d99ae;";
+    btn2.innerText = "🐱 Cat Game";
+    btn2.style.cssText = "padding: 5px 10px; font-size: 10px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; background: #2b2d42; color: white; border: 1px solid #8d99ae;";
     btn2.onclick = () => window.switchPracticeStage(2);
+
+    const btn3 = document.createElement("button");
+    btn3.id = "btnSelectPracticeMemory";
+    btn3.innerText = "🧠 Memory";
+    btn3.style.cssText = "padding: 5px 10px; font-size: 10px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; background: #ff758f; color: white;";
+    btn3.onclick = () => window.switchPracticeStage(3);
     
     navContainer.appendChild(btn1);
     navContainer.appendChild(btn2);
+    navContainer.appendChild(btn3);
     statusEl.appendChild(label);
     statusEl.appendChild(navContainer);
 }
@@ -73,25 +81,41 @@ window.switchPracticeStage = function(stageNum) {
     
     const btnFlappy = document.getElementById("btnSelectPracticeFlappy");
     const btnCrosswalk = document.getElementById("btnSelectPracticeCrosswalk");
+    const btnMemory = document.getElementById("btnSelectPracticeMemory");
     const stageFlappy = document.getElementById("practiceFlappyStage");
     const stageCrosswalk = document.getElementById("practiceCrosswalkStage");
+    const stageMemory = document.getElementById("practiceMemoryStage");
 
     if (stageNum === 1) {
         if(btnFlappy) { btnFlappy.style.background = "#ff758f"; btnFlappy.style.border = "none"; }
         if(btnCrosswalk) { btnCrosswalk.style.background = "#2b2d42"; btnCrosswalk.style.border = "1px solid #8d99ae"; }
+        if(btnMemory) { btnMemory.style.background = "#ff758f"; btnMemory.style.border = "1px solid #8d99ae"; }
         
         if(stageFlappy) stageFlappy.classList.remove("hidden");
         if(stageCrosswalk) stageCrosswalk.classList.add("hidden");
+        if(stageMemory) stageMemory.classList.add("hidden");
         
         if (typeof initFlappyGame === "function") initFlappyGame();
     } else if (stageNum === 2) {
         if(btnFlappy) { btnFlappy.style.background = "#2b2d42"; btnFlappy.style.border = "1px solid #8d99ae"; }
         if(btnCrosswalk) { btnCrosswalk.style.background = "#ff758f"; btnCrosswalk.style.border = "none"; }
+        if(btnMemory) { btnMemory.style.background = "#ff758f"; btnMemory.style.border = "1px solid #8d99ae"; }
         
         if(stageFlappy) stageFlappy.classList.add("hidden");
         if(stageCrosswalk) stageCrosswalk.classList.remove("hidden");
+        if(stageMemory) stageMemory.classList.add("hidden");
         
         if (typeof initCrosswalkGame === "function") initCrosswalkGame();
+    } else if (stageNum === 3) {
+        if(btnFlappy) { btnFlappy.style.background = "#2b2d42"; btnFlappy.style.border = "1px solid #8d99ae"; }
+        if(btnCrosswalk) { btnCrosswalk.style.background = "#2b2d42"; btnCrosswalk.style.border = "1px solid #8d99ae"; }
+        if(btnMemory) { btnMemory.style.background = "#ff758f"; btnMemory.style.border = "none"; }
+        
+        if(stageFlappy) stageFlappy.classList.add("hidden");
+        if(stageCrosswalk) stageCrosswalk.classList.add("hidden");
+        if(stageMemory) stageMemory.classList.remove("hidden");
+        
+        if (typeof initMemoryGame === "function") initMemoryGame();
     }
 };
 

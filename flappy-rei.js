@@ -53,6 +53,7 @@ function initFlappyGame() {
     
     let score = 0;
     let gameOver = false;
+    let gameWon = false;
     let gameStarted = false; 
     let pipes = [];
     let pipeTimer = 0;
@@ -60,6 +61,7 @@ function initFlappyGame() {
 
     let powerups = [];
     let activeTimers = { liz: 0, leeseo: 0, wonyoung: 0 };
+    let lizGraceFrames = 0;
 
     const scoreBoard = document.getElementById(scoreBoardId);
     if (scoreBoard) scoreBoard.innerText = `Score: 0 / ${FLAPPY_WIN_SCORE}`;
@@ -87,6 +89,7 @@ function initFlappyGame() {
             activeTimers = { liz: 0, leeseo: 0, wonyoung: 0 };
             pipeTimer = 0;
             gameOver = false;
+            gameWon = false;
             gameStarted = false; 
             document.getElementById(scoreBoardId).innerText = `Score: 0 / ${FLAPPY_WIN_SCORE}`; 
         } else {
@@ -134,18 +137,19 @@ function initFlappyGame() {
         if (activeTimers.liz > 0) activeTimers.liz--;
         if (activeTimers.leeseo > 0) activeTimers.leeseo--;
         if (activeTimers.wonyoung > 0) activeTimers.wonyoung--;
+        if (lizGraceFrames > 0) lizGraceFrames--;
 
-        let currentGravity = activeTimers.wonyoung > 0 ? baseGravity * 1.8 : baseGravity;
-        let currentMaxFall = activeTimers.wonyoung > 0 ? baseMaxFall * 1.5 : baseMaxFall;
+        const currentGravity = activeTimers.wonyoung > 0 ? baseGravity * 1.8 : baseGravity;
+        const currentMaxFall = activeTimers.wonyoung > 0 ? baseMaxFall * 1.5 : baseMaxFall;
 
         if (gameStarted && !gameOver) {
             velocity += currentGravity;
-            if (velocity > currentMaxFall) velocity = currentMaxFall; 
+            if (velocity > currentMaxFall) velocity = currentMaxFall;
             birdY += velocity;
             pipeTimer++;
-            
+
             if (pipeTimer >= 100) {
-                let gap = 125; 
+                let gap = 125;
                 let topHeight = Math.floor(Math.random() * (canvas.height - gap - 100)) + 40;
                 pipes.push({ x: canvas.width, top: topHeight, bottom: canvas.height - topHeight - gap, passed: false });
 
@@ -160,9 +164,12 @@ function initFlappyGame() {
                 }
                 pipeTimer = 0;
             }
-            if (birdY > canvas.height - 40 || birdY < -10) { triggerFlappyLoss(); }
+
+            if (birdY > canvas.height - 40 || birdY < -10) {
+                triggerFlappyLoss();
+            }
         }
-        
+
         for (let i = pipes.length - 1; i >= 0; i--) {
             if (gameStarted && !gameOver) pipes[i].x -= 2.0;
             
@@ -172,7 +179,7 @@ function initFlappyGame() {
                 ctx.fillStyle = "#ff758f"; ctx.fillRect(pipes[i].x, canvas.height - pipes[i].bottom, 52, pipes[i].bottom);
                 ctx.fillStyle = "#ff4d6d"; ctx.fillRect(pipes[i].x + 4, canvas.height - pipes[i].bottom, 44, 12);
                 
-                if (activeTimers.leeseo === 0 && pipes[i].x < 55 && pipes[i].x + 52 > 25) {
+                if (activeTimers.leeseo === 0 && lizGraceFrames === 0 && pipes[i].x < 55 && pipes[i].x + 52 > 25) {
                     if (birdY + 5 < pipes[i].top || birdY + 25 > canvas.height - pipes[i].bottom) triggerFlappyLoss();
                 }
             }
@@ -185,12 +192,17 @@ function initFlappyGame() {
                 document.getElementById(scoreBoardId).innerText = `Score: ${score} / ${FLAPPY_WIN_SCORE}`; 
                 
                 if (score >= FLAPPY_WIN_SCORE) { 
+                    gameStarted = false;
+                    gameOver = true;
+                    gameWon = true;
+                    pipes = [];
+                    powerups = [];
                     window.removeEventListener("keydown", handleKeydown);
                     stopBgAudio();
                     playSound(winAudio);
                     
                     if(typeof showReactionPopup === "function") {
-                        showReactionPopup("pics/rei-flappy-win.jpg", "YOU DID IT! 🎉", "Congratulations on completing Flappy Rei game!", "#2a9d8f", 2500, () => {
+                        showReactionPopup("pics/rei-happy.jpg", "YOU DID IT! 🎉", "Congratulations on completing Flappy Rei game!", "#2a9d8f", 2500, () => {
                             currentStage = 2;
                             if (isPracticeMode) {
                                 document.getElementById("practiceFlappyStage").classList.add("hidden");
@@ -223,7 +235,13 @@ function initFlappyGame() {
             }
 
             if (gameStarted && !gameOver && 20 < p.x + p.size && 20 + 32 > p.x && birdY < p.y + p.size && birdY + 32 > p.y) {
-                activeTimers[p.type] = 180; 
+                activeTimers[p.type] = 180;
+                if (p.type === 'liz') {
+                    pipes = [];
+                    powerups = [];
+                    pipeTimer = -80;
+                    lizGraceFrames = 60;
+                }
                 playSound(powerupAudio);
                 powerups.splice(j, 1);
             } else if (p.x + p.size < 0) powerups.splice(j, 1);
@@ -250,7 +268,7 @@ function initFlappyGame() {
             ctx.fillText("TAP SCREEN OR SPACE TO FLY", canvas.width / 2, canvas.height / 2);
         }
         
-        if (gameOver) {
+        if (gameOver && !gameWon) {
             ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#fff"; ctx.font = "bold 22px sans-serif"; ctx.textAlign = "center";
             ctx.fillText("Game Over 💔", canvas.width / 2, canvas.height / 2 - 15);

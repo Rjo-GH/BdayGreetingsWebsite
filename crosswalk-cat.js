@@ -166,20 +166,50 @@ function initCrosswalkGame() {
         if (elapsed < fpsInterval) return;
         lastTime = currentTime - (elapsed % fpsInterval);
         
-        ctx.fillStyle = "#8d99ae"; 
+        const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        bgGradient.addColorStop(0, "#1b2434");
+        bgGradient.addColorStop(1, "#28354f");
+        ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.fillStyle = "#d1d5db";
-        ctx.fillRect(0, 0, canvas.width, 50); 
-        ctx.fillRect(0, 310, canvas.width, 50); 
-        
-        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-        for (let i = 20; i < canvas.width; i += 40) {
-            ctx.fillRect(i, 50, 15, 260);
+
+        ctx.fillStyle = "#2f3b58";
+        ctx.fillRect(16, 60, canvas.width - 32, canvas.height - 110);
+
+        ctx.strokeStyle = "rgba(255,255,255,0.18)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(16, 60, canvas.width - 32, canvas.height - 110);
+
+        ctx.strokeStyle = "rgba(255,255,255,0.22)";
+        ctx.lineWidth = 1;
+        for (let i = 80; i < canvas.height - 40; i += 40) {
+            ctx.setLineDash([12, 12]);
+            ctx.beginPath();
+            ctx.moveTo(28, i);
+            ctx.lineTo(canvas.width - 28, i);
+            ctx.stroke();
         }
-        
-        let coreX = catX + 12; 
-        let coreY = catY + 12; 
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = "rgba(255,255,255,0.08)";
+        ctx.fillRect(16, 60, 10, canvas.height - 110);
+        ctx.fillRect(canvas.width - 26, 60, 10, canvas.height - 110);
+
+        ctx.fillStyle = "#263145";
+        ctx.fillRect(0, 0, canvas.width, 54);
+        ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText("CROSSWALK TRAINING", 18, 22);
+        ctx.font = "11px sans-serif";
+        ctx.fillStyle = "#cbd5e1";
+        ctx.fillText("Avoid the moving cars and reach the top safely.", 18, 40);
+        ctx.fillStyle = "#d3f8ff";
+        ctx.fillText(`CHARACTER: ${selectedCharacter.name}`, 18, canvas.height - 18);
+
+        let coreX = catX + 12;
+        let coreY = catY + 12;
 
         for (let i = 0; i < cars.length; i++) {
             if (gameStarted && !gameOver) {
@@ -250,9 +280,9 @@ function initCrosswalkGame() {
                     document.getElementById("practiceStatus").innerHTML = "🎉 <b style='color:#06d6a0;'>Practice Complete!</b> 🎉<br>You're ready for the real thing!";
                     document.getElementById("practiceCrosswalkStage").classList.add("hidden");
                 } else {
-                    if (typeof window.handleActualGiftUnlock === "function") {
-                        window.handleActualGiftUnlock();
-                    }
+                    document.getElementById("crosswalkStage").classList.add("hidden");
+                    document.getElementById("memoryStage").classList.remove("hidden");
+                    if (typeof initMemoryGame === "function") initMemoryGame();
                 }
             }, 300);
             return;
