@@ -1,7 +1,7 @@
 // ==========================================
 // CONFIGURATION & SECURITY MANAGEMENT
 // ==========================================
-const IS_DRY_RUN = true; 
+const IS_DRY_RUN = false; 
 
 // ⚙️ REI CONFIGURATION: Adjust how many floating Rei's appear!
 const NUM_ROTATING_REIS = 30; 
@@ -83,10 +83,12 @@ async function updateGreetingReaction(key, reactionId, row) {
                 const data = await res.json();
                 const serverRow = data.sheet1 || {};
                 const updated = {};
+                
                 REACTION_TYPES.forEach(t => {
-                    const col = `reaction_${t.id}`;
-                    const current = parseInt(serverRow[col] || 0, 10);
-                    updated[col] = current + (t.id === reactionId ? 1 : 0);
+                    // FIX: Match Sheety's camelCase naming convention (reactionLove, reactionSparkle, etc.)
+                    const colName = `reaction${t.id.charAt(0).toUpperCase() + t.id.slice(1)}`;
+                    const current = parseInt(serverRow[colName] || 0, 10);
+                    updated[colName] = current + (t.id === reactionId ? 1 : 0);
                 });
 
                 const payload = { sheet1: updated };
@@ -101,7 +103,10 @@ async function updateGreetingReaction(key, reactionId, row) {
                     const patched = await patchRes.json();
                     const patchedRow = patched.sheet1 || {};
                     const counts = {};
-                    REACTION_TYPES.forEach(t => counts[t.id] = patchedRow[`reaction_${t.id}`] || 0);
+                    REACTION_TYPES.forEach(t => {
+                        const colName = `reaction${t.id.charAt(0).toUpperCase() + t.id.slice(1)}`;
+                        counts[t.id] = patchedRow[colName] || 0;
+                    });
                     updateReactionCountsInRow(row, counts);
                     return;
                 }
@@ -375,7 +380,10 @@ window.renderGreetings = async function() {
 
             // If Sheety exposes reaction columns, prefer server counts
             const serverCounts = {};
-            REACTION_TYPES.forEach(t => { serverCounts[t.id] = g[`reaction_${t.id}`] || 0; });
+            REACTION_TYPES.forEach(t => { 
+                const colName = `reaction${t.id.charAt(0).toUpperCase() + t.id.slice(1)}`;
+                serverCounts[t.id] = g[colName] || 0; 
+            });
 
             card.innerHTML = `
                 <h4>${gName}</h4>
@@ -591,11 +599,14 @@ function handleQuizSuccess() {
     }
 }
 
-// CALLED BY crosswalk-cat.js WHEN STAGE 2 IS BEATEN
+// CALLED BY memory-game.js WHEN STAGE 3 IS BEATEN
 window.handleActualGiftUnlock = function() {
     document.getElementById("arcadeState").classList.add("hidden");
     document.getElementById("arcadeState").style.display = "none";
-    document.getElementById("unlockedState").classList.remove("hidden");
+    
+    const unlockedState = document.getElementById("unlockedState");
+    unlockedState.classList.remove("hidden");
+    unlockedState.style.display = "flex";
     
     // Quick burst of Reis on unlock!
     const unlockContainer = document.getElementById("mainReiBg");
@@ -615,8 +626,8 @@ window.handleActualGiftUnlock = function() {
         if (notifyTextEl) notifyTextEl.innerText = 'Notifying owner...';
         const ok = await notifyOwnerViaSheety('auto_unlock', { source: 'client' });
         if (notifyTextEl) {
-            if (ok) notifyTextEl.innerText = 'Celebrant finished the games — owner notified.';
-            else notifyTextEl.innerText = 'Celebrant finished — failed to notify owner. Will retry automatically.';
+            if (ok) notifyTextEl.innerText = 'Owner has been successfully notified!';
+            else notifyTextEl.innerText = 'Finished successfully! (Owner will check logs soon)';
         }
     })();
 };
@@ -624,7 +635,16 @@ window.handleActualGiftUnlock = function() {
 // Notify owner via Sheety notifications sheet
 async function notifyOwnerViaSheety(messageKey, meta = {}) {
     try {
-        const payload = { notifications: { messageKey: messageKey || '', type: 'unlock', status: 'celebrant_finished', timestamp: new Date().toISOString(), meta: JSON.stringify(meta) } };
+        // FIX: The root key MUST be 'notification' (singular endpoint name) for Sheety to accept it!
+        const payload = { 
+            notification: { 
+                messageKey: messageKey || '', 
+                type: 'unlock', 
+                status: 'celebrant_finished', 
+                timestamp: new Date().toISOString(), 
+                meta: JSON.stringify(meta) 
+            } 
+        };
         const res = await fetch(SHEETY_NOTIFICATIONS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -682,10 +702,11 @@ async function flushSheetyReactionQueue() {
             const data = await res.json();
             const serverRow = data.sheet1 || {};
             const updated = {};
+            
             REACTION_TYPES.forEach(t => {
-                const col = `reaction_${t.id}`;
-                const current = parseInt(serverRow[col] || 0, 10);
-                updated[col] = current + (t.id === reactionId ? 1 : 0);
+                const colName = `reaction${t.id.charAt(0).toUpperCase() + t.id.slice(1)}`;
+                const current = parseInt(serverRow[colName] || 0, 10);
+                updated[colName] = current + (t.id === reactionId ? 1 : 0);
             });
             const patchRes = await fetch(`${SHEETY_API_URL}/${rowId}`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sheet1: updated })

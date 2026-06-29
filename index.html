@@ -13,7 +13,6 @@
     <!-- AUDIO DECLARATIONS ⚠️ Make sure these paths are correct! -->
     <audio id="flappyBgMusic" src="music/flappy-bg.mp3" loop></audio>
     <audio id="flappyTapSound" src="music/flappy-bird-fly.mp3"></audio>
-    <!-- NEW FLAPPY SOUNDS -->
     <audio id="flappyPointSound" src="music/flappy-bird-point.mp3"></audio>
     <audio id="flappyPowerupSound" src="music/flappy-powerup.mp3"></audio>
     <audio id="flappyDieSound" src="music/flappy-bird-die.mp3"></audio>
@@ -21,9 +20,9 @@
 
     <audio id="catBgMusic" src="music/cat-bg.mp3" loop></audio>
     <audio id="catMoveSound" src="music/oiia-oiia-sound.mp3"></audio>
-    <!-- NEW CAT GAME SOUNDS -->
     <audio id="catDieSound" src="music/sad-meow-song.mp3"></audio>
     <audio id="catWinSound" src="music/anime-wow-sound-effect-mp3cut.mp3"></audio>
+    
     <!-- JS WILL INJECT FLOATING REIS HERE -->
     <div id="mainReiBg" class="rei-bg-layer"></div>
 
@@ -77,12 +76,6 @@
                         </div>
                         <button onclick="moveCat('down')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 70px; -webkit-tap-highlight-color: transparent;">▼ Down</button>
                     </div>
-                </div>
-
-                <div id="practiceBadmintonStage" class="hidden" style="width: 100%; text-align: center;">
-                    <h4 style="color: #fff; margin-bottom: 8px; margin-top: 0; font-size: 0.9rem;">Badminton Smash!</h4>
-                    <div id="practiceBadmintonCanvasContainer" style="display: flex; justify-content: center; align-items: center; border: 2px solid #fff; border-radius: 8px; background: #c6f7e2; overflow: hidden; margin: 0 auto; width: 320px; max-width: 100%;"></div>
-                    <p style="color: #fff; font-size: 0.8rem; margin-top: 12px;">Move the paddle left and right to keep the shuttlecock in play.</p>
                 </div>
 
                 <div id="practiceMemoryStage" class="hidden" style="width: 100%; text-align: center;">
@@ -187,8 +180,6 @@
 
             </div>
         </section>
-
-        <!-- Mini Games section removed from the main page per request -->
         
         <section class="content-section">
             <h2>A Little Send-Off Surprise ✈️🌸</h2>
@@ -236,82 +227,75 @@
 
                         <div id="crosswalkStage" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                             <h4 style="color: #fff; margin-bottom: 12px; margin-top: 5px; font-size: 1rem; font-weight: bold; letter-spacing: 0.5px;">Crosswalk Stage! 🐾</h4>
-                            <div id="crosswalkCanvasContainer" style="display: flex; justify-content: center; align-items: center; border: 2px solid #fff; border-radius: 8px; background: #8d99ae; overflow: hidden; margin: 0 auto; width: 320px; max-width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>
-                            
-                            <div class="mobile-controls" style="margin-top: 15px; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%;">
-                                <button onclick="moveCat('up')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 80px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent;">▲ Up</button>
+                            <div id="crosswalkCanvasContainer" style="display: flex; justify-content: center; align-items: center; border: 2px solid #fff; border-radius: 8px; background: #fff; overflow: hidden; margin: 0 auto; width: 320px; max-width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>
+                            <div style="margin-top: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding-bottom: 5px;">
+                                <button onclick="moveCat('up')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 70px;">▲ Up</button>
                                 <div style="display: flex; gap: 20px;">
-                                    <button onclick="moveCat('left')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 80px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent;">◀ Left</button>
-                                    <button onclick="moveCat('right')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 80px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent;">Right ▶</button>
+                                    <button onclick="moveCat('left')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 70px;">◀ Left</button>
+                                    <button onclick="moveCat('right')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 70px;">Right ▶</button>
                                 </div>
-                                <button onclick="moveCat('down')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 80px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent;">▼ Down</button>
+                                <button onclick="moveCat('down')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; min-width: 70px;">▼ Down</button>
                             </div>
-                            <p class="control-tip" style="color: #ffccd5; font-size: 0.8rem; margin-top: 12px; margin-bottom: 0;">💡 Use Arrow Keys / WASD / Buttons</p>
                         </div>
 
                         <div id="memoryStage" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                            <h4 style="color: #fff; margin-bottom: 12px; margin-top: 5px; font-size: 1rem; font-weight: bold; letter-spacing: 0.5px;">Memory Match Stage 🧠</h4>
-                            <p style="color: #cbd5e1; font-size:0.9rem; margin: 0 0 12px 0; max-width: 300px;">Match all pairs to unlock the gift.</p>
+                            <h4 style="color: #fff; margin-bottom: 12px; margin-top: 5px; font-size: 1rem; font-weight: bold;">Memory Match! 🧠</h4>
                             <div id="memoryBoard" style="display: grid; grid-template-columns: repeat(4, minmax(60px, 1fr)); gap: 10px; justify-items: center; width: 100%; max-width: 320px; margin: 0 auto;"></div>
+                            <p style="color: #ffccd5; font-size: 0.8rem; margin-top: 12px;">Match the pairs to clear the final stage!</p>
                         </div>
-
                     </div>
                 </div>
 
-                <div id="unlockedState" class="gift-state hidden">
-                    <div class="ribbon-banner">🎉 UNLOCKED 🎉</div>
-                    <h2>Happy 30th Birthday, Akina!</h2>
-                    <p class="gift-subtext">Sent with love via GCash</p>
-
-                    <!-- QR removed for manual transfer workflow. Owner will be notified when celebrant finishes the games. -->
-                    <div id="unlockNotice" style="text-align:center; padding: 12px;">
-                        <p id="ownerNotifyText" style="color:#06d6a0; font-weight:700; margin: 6px 0;">Celebrant finished the games — owner will be notified.</p>
-                        <p id="unlockManualNote" style="color:#666; font-size:0.9rem; margin: 6px 0;">The QR code has been hidden to avoid accidental transfers. You will receive a notification in the linked Google Sheet. Manually finalize the transfer when ready.</p>
+                <!-- NEW UNLOCKED STATE (REPLACED QR CODE FLOW) -->
+                <div id="unlockedState" class="gift-state hidden" style="display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin-top: 20px;">
+                    <h3 style="color: #06d6a0; font-size: 1.8rem; margin-bottom: 10px;">🎉 Happy Birthday! 🎉</h3>
+                    <p style="font-size: 1.1rem; color: #444; font-weight: bold;">You successfully cleared all the games!</p>
+                    
+                    <div style="background: #e2f7f4; border: 2px dashed #06d6a0; padding: 20px; border-radius: 12px; margin: 15px 0; width: 100%; max-width: 300px;">
+                        <p style="margin: 0; font-size: 1.2rem; color: #2a9d8f; font-weight: bold;">🎁 Gift Unlocked! 🎁</p>
+                        <p id="ownerNotifyText" style="color: #555; margin-top: 10px; font-size: 0.9rem; font-style: italic;">Notifying owner...</p>
                     </div>
                     
-                    <div style="display:flex; gap:10px; justify-content:center; align-items:center; margin-top:8px;">
-                        <button id="ownerMarkDone" style="background:#ff758f; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">Mark as Sent</button>
-                        <a id="viewSheetLink" href="#" target="_blank" style="color:#2b2d42; text-decoration:underline;">Open Notifications Sheet</a>
-                    </div>
+                    <p style="font-size: 0.95rem; color: #666; margin-top: 10px; padding: 0 15px;">Your GCash gift will be sent over to you manually very soon! Have an amazing day! 💕</p>
                 </div>
-
+                
             </div>
         </section>
-
     </main>
-    
-    <script src="arcade-state.js"></script>
+
+    <!-- UNIVERSAL POPUP -->
+    <div id="dynamicReactionPop" class="lock-overlay hidden" style="z-index: 20005;">
+        <div style="background: white; padding: 25px; border-radius: 16px; text-align: center; max-width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <img id="reactionImage" src="" alt="Reaction" style="width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 4px solid #ff758f; margin-bottom: 15px;">
+            <h3 id="reactionTitle" style="margin: 0 0 10px 0; font-size: 1.4rem;"></h3>
+            <p id="reactionDesc" style="color: #666; font-size: 0.95rem; margin: 0;"></p>
+        </div>
+    </div>
+
+    <!-- REUSABLE MEME POPUP -->
+    <div id="reiDisappointedPop" class="lock-overlay hidden" style="z-index: 20005;">
+        <div style="background: white; padding: 25px; border-radius: 16px; text-align: center; max-width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <img src="pics/rei-disappointed.jpg" alt="Disappointed Rei" style="width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 4px solid #d90429; margin-bottom: 15px;">
+            <h3 style="color: #d90429; margin: 0 0 10px 0; font-size: 1.4rem;">Oh no!</h3>
+            <p style="color: #666; font-size: 0.95rem; margin: 0;">Rei is sad! Let's try that again.</p>
+        </div>
+    </div>
+
+    <!-- LIGHTBOX MODAL -->
+    <div id="lightboxModal" class="lightbox">
+        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+        <button class="lightbox-nav prev" onclick="changeLightboxImage(-1); event.stopPropagation();">&#10094;</button>
+        <div class="lightbox-content-wrapper">
+            <img id="lightboxImg" src="">
+        </div>
+        <button class="lightbox-nav next" onclick="changeLightboxImage(1); event.stopPropagation();">&#10095;</button>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="script.js"></script>
     <script src="flappy-rei.js"></script>
     <script src="crosswalk-cat.js"></script>
     <script src="memory-game.js"></script>
-    <script src="script.js"></script>
-    
-    <div id="lightboxModal" class="lightbox">
-        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
-        <button class="lightbox-nav prev" onclick="changeLightboxImage(-1)">&#10094;</button>
-        <div class="lightbox-content-wrapper">
-            <img id="lightboxImg" src="" alt="Enlarged view">
-        </div>
-        <button class="lightbox-nav next" onclick="changeLightboxImage(1)">&#10095;</button>
-    </div>
-
-    <!-- ⚠️ DYNAMIC REACTION POPUP (For Quiz & Flappy Win) ⚠️ -->
-    <div id="dynamicReactionPop" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s;">
-        <div style="background: white; padding: 25px; border-radius: 15px; text-align: center; max-width: 85%; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-            <img id="reactionImage" src="" alt="Reaction" style="max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; margin-bottom: 12px;">
-            <h3 id="reactionTitle" style="color: #d90429; margin: 0 0 5px; font-size: 1.2rem;">Title</h3>
-            <p id="reactionDesc" style="color: #555; margin: 0; font-size: 0.9rem; font-weight: 500;">Desc</p>
-        </div>
-    </div>
-
-    <!-- (Old Flappy Loss Meme remains for legacy use by flappy-rei.js) -->
-    <div id="reiDisappointedPop" class="hidden" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div style="background: white; padding: 25px; border-radius: 15px; text-align: center; max-width: 85%; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-            <img src="pics/rei-disappointed.jpg" alt="Rei is checking your skills" style="max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; margin-bottom: 12px;">
-            <h3 style="color: #d90429; margin: 0 0 5px; font-size: 1.2rem;">Rei is watching! 👀</h3>
-            <p style="color: #555; margin: 0; font-size: 0.9rem; font-weight: 500;">"Don't give up, let's try that round again!"</p>
-        </div>
-    </div>
-
+    <script src="arcade-state.js"></script>
 </body>
 </html>
