@@ -27,6 +27,8 @@ function initMemoryGame() {
     let matches = 0;
 
     function revealCard(cardEl, cardData) {
+        if (typeof window.playGameAudio === 'function') window.playGameAudio("memoryFlipSound"); // 🎵 FLIP SOUND
+        
         cardEl.classList.add('revealed');
         cardEl.querySelector('.card-front').style.backgroundImage = `url('${cardData.src}')`;
     }
@@ -39,12 +41,17 @@ function initMemoryGame() {
     function checkMatch() {
         const isMatch = firstCard.cardData.src === secondCard.cardData.src;
         if (isMatch) {
+            if (typeof window.playGameAudio === 'function') window.playGameAudio("memoryMatchSound"); // 🎵 MATCH SOUND
+            
             firstCard.cardData.matched = true;
             secondCard.cardData.matched = true;
             matches += 1;
             firstCard = null;
             secondCard = null;
+            
             if (matches === cardSources.length) {
+                if (typeof window.playGameAudio === 'function') window.playGameAudio("memoryWinSound"); // 🎵 WIN SOUND
+                
                 showReactionPopup(
                     'pics/rei-happy.jpg',
                     'Match Complete!',
@@ -52,14 +59,22 @@ function initMemoryGame() {
                     '#06d6a0',
                     2200,
                     () => {
-                        if (typeof window.handleActualGiftUnlock === 'function' && !window.isPracticeMode) {
-                            window.handleActualGiftUnlock();
+                        // Safely routing the unlock vs practice mode
+                        if (typeof isPracticeMode !== 'undefined' && isPracticeMode) {
+                            const ps = document.getElementById("practiceStatus");
+                            if (ps) ps.innerHTML = "🎉 <b style='color:#06d6a0;'>Practice Complete!</b> 🎉";
+                        } else {
+                            if (typeof window.handleActualGiftUnlock === 'function') {
+                                window.handleActualGiftUnlock();
+                            }
                         }
                     }
                 );
             }
             lockBoard = false;
         } else {
+            if (typeof window.playGameAudio === 'function') window.playGameAudio("memoryMismatchSound"); // 🎵 MISMATCH SOUND
+            
             setTimeout(() => {
                 hideCard(firstCard.element);
                 hideCard(secondCard.element);

@@ -541,6 +541,15 @@ window.showReactionPopup = function(imgSrc, title, desc, color, duration, callba
     }, duration);
 };
 
+// --- 🌟 GLOBAL AUDIO HELPER ---
+window.playGameAudio = function(audioId) {
+    const audio = document.getElementById(audioId);
+    if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(e => console.log("Audio prevented:", e));
+    }
+};
+
 function handleChoiceSelection(selectedIdx, clickedBtn) {
     const feedback = document.getElementById("quizFeedback");
     const currentData = QUIZ_QUESTIONS[quizIndex];
@@ -551,6 +560,7 @@ function handleChoiceSelection(selectedIdx, clickedBtn) {
     allBtns.forEach(b => b.style.pointerEvents = 'none');
 
     if (selectedIdx === currentData.correct) {
+        window.playGameAudio("quizCorrectSound"); // 🎵 CORRECT SOUND
         clickedBtn.classList.add("btn-success-pop");
         feedback.className = "quiz-feedback-msg quiz-correct";
         feedback.innerText = "Correct! Spot on! 🎉";
@@ -566,12 +576,13 @@ function handleChoiceSelection(selectedIdx, clickedBtn) {
         });
 
     } else {
+        window.playGameAudio("quizWrongSound"); // 🎵 WRONG SOUND
         clickedBtn.classList.add("btn-error-shake");
         feedback.className = "quiz-feedback-msg quiz-wrong";
         feedback.innerText = "Ouch! Incorrect choice. Try that one again! 💕";
         
         // Show Sad Rei Popup!
-        showReactionPopup(currentData.imgWrong, "WRONG ANSWER!", "Rei is sad, let's try again! 🥺", "#d90429", 1400, () => {
+        showReactionPopup(currentData.imgWrong, "WRONG ANSWER!", "Rei is mad, let's try again! 🥺", "#d90429", 1400, () => {
             clickedBtn.classList.remove("btn-error-shake");
             feedback.innerText = "";
             allBtns.forEach(b => b.style.pointerEvents = 'auto');
@@ -580,6 +591,7 @@ function handleChoiceSelection(selectedIdx, clickedBtn) {
 }
 
 function handleQuizSuccess() {
+    window.playGameAudio("quizWinSound"); // 🎵 QUIZ FINISHED SOUND
     const quizBox = document.getElementById("quizContainer");
     if (quizBox) {
         quizBox.innerHTML = "<h3 style='color: #06d6a0; margin: 0;'>🎉 Access Granted! 🎉</h3><p style='color: #555; font-size: 0.9rem;'>Booting up Rei's Console System...</p>";
@@ -627,7 +639,7 @@ window.handleActualGiftUnlock = function() {
         const ok = await notifyOwnerViaSheety('auto_unlock', { source: 'client' });
         if (notifyTextEl) {
             if (ok) notifyTextEl.innerText = 'Owner has been successfully notified!';
-            else notifyTextEl.innerText = 'Finished successfully! (Owner will check logs soon)';
+            else notifyTextEl.innerText = 'Finished successfully! (Please screenshot this and send to Rjo to claim your prize xD)';
         }
     })();
 };
@@ -746,6 +758,15 @@ window.triggerGiftHint = function() {
 document.addEventListener("DOMContentLoaded", async () => {
     generateFloatingReis();
     await syncSecureTime();
+
+    // --- 🌟 LOGIN ENTER KEY LISTENER ---
+    const loginUserEl = document.getElementById("loginUser");
+    const loginPassEl = document.getElementById("loginPass");
+    const handleLoginEnter = (e) => {
+        if (e.key === "Enter") processLogin();
+    };
+    if (loginUserEl) loginUserEl.addEventListener("keydown", handleLoginEnter);
+    if (loginPassEl) loginPassEl.addEventListener("keydown", handleLoginEnter);
 
     // Populate images for gallery
     const galleryImages = document.querySelectorAll('.gallery-img');
