@@ -23,8 +23,49 @@ body {
     display: flex;
     justify-content: center;
     line-height: 1.6;
+    overflow-x: hidden;
 }
 
+/* --- FLOATING & ROTATING REI PLUSHIES BACKGROUND --- */
+.rei-bg-layer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; overflow: hidden; }
+.rei-plush { position: absolute; width: 65px; height: 65px; background-image: url('pics/rei-plush.png'); background-size: contain; background-repeat: no-repeat; opacity: 0.25; }
+
+.bubble-1 { top: 8%; left: 5%; opacity: 0.5; animation: floatAndSpin 14s infinite linear; }
+.bubble-2 { top: 18%; right: 12%; opacity: 0.5; animation: floatAndSpin 18s infinite linear reverse; }
+.bubble-3 { top: 32%; left: 45%; opacity: 0.5; animation: floatAndSpin 20s infinite linear; } 
+.bubble-4 { top: 50%; right: 8%; opacity: 0.5; animation: floatAndSpin 22s infinite linear; }
+.bubble-5 { top: 62%; left: 15%; opacity: 0.5; animation: floatAndSpin 15s infinite linear reverse; }
+.bubble-6 { top: 72%; left: 48%; opacity: 0.5; animation: floatAndSpin 24s infinite linear; } 
+.bubble-7 { top: 85%; left: 8%; opacity: 0.5; animation: floatAndSpin 17s infinite linear; }
+.bubble-8 { top: 92%; right: 15%; opacity: 0.5; animation: floatAndSpin 21s infinite linear reverse; }
+.bubble-9  { top: 5%; left: 30%; opacity: 0.5; animation: floatAndSpin 16s infinite linear; }
+.bubble-10 { top: 15%; right: 35%; opacity: 0.5; animation: floatAndSpin 19s infinite linear reverse; }
+.bubble-11 { top: 25%; left: 10%; opacity: 0.5; animation: floatAndSpin 23s infinite linear; }
+.bubble-12 { top: 35%; right: 25%; opacity: 0.5; animation: floatAndSpin 15s infinite linear; }
+.bubble-13 { top: 45%; left: 60%; opacity: 0.5; animation: floatAndSpin 21s infinite linear reverse; }
+.bubble-14 { top: 55%; right: 40%; opacity: 0.5; animation: floatAndSpin 18s infinite linear; }
+.bubble-15 { top: 65%; left: 25%; opacity: 0.5; animation: floatAndSpin 25s infinite linear reverse; }
+.bubble-16 { top: 75%; right: 10%; opacity: 0.5; animation: floatAndSpin 17s infinite linear; }
+.bubble-17 { top: 80%; left: 70%; opacity: 0.5; animation: floatAndSpin 20s infinite linear reverse; }
+.bubble-18 { top: 95%; right: 30%; opacity: 0.5; animation: floatAndSpin 22s infinite linear; }
+.bubble-19 { top: 12%; left: 75%; opacity: 0.5; animation: floatAndSpin 19s infinite linear reverse; }
+.bubble-20 { top: 28%; right: 5%; opacity: 0.5; animation: floatAndSpin 16s infinite linear; }
+.bubble-21 { top: 42%; left: 35%; opacity: 0.5; animation: floatAndSpin 24s infinite linear; }
+.bubble-22 { top: 58%; right: 60%; opacity: 0.5; animation: floatAndSpin 15s infinite linear reverse; }
+.bubble-23 { top: 68%; left: 85%; opacity: 0.5; animation: floatAndSpin 21s infinite linear; }
+.bubble-24 { top: 88%; right: 45%; opacity: 0.5; animation: floatAndSpin 18s infinite linear reverse; }
+.bubble-25 { top: 2%; left: 55%; opacity: 0.5; animation: floatAndSpin 23s infinite linear; }
+.bubble-26 { top: 22%; right: 70%; opacity: 0.5; animation: floatAndSpin 17s infinite linear reverse; }
+.bubble-27 { top: 38%; left: 20%; opacity: 0.5; animation: floatAndSpin 20s infinite linear; }
+.bubble-28 { top: 48%; right: 85%; opacity: 0.5; animation: floatAndSpin 25s infinite linear reverse; }
+.bubble-29 { top: 78%; left: 40%; opacity: 0.5; animation: floatAndSpin 16s infinite linear; }
+.bubble-30 { top: 90%; right: 65%; opacity: 0.5; animation: floatAndSpin 22s infinite linear reverse; }
+
+@keyframes floatAndSpin { 0% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-15px) rotate(180deg); } 100% { transform: translateY(0) rotate(360deg); } }
+
+/* ==========================================
+   REST OF YOUR WEBSITE UI STYLING
+   ========================================== */
 .main-wrapper {
     width: 100%;
     max-width: 480px; 
@@ -33,6 +74,8 @@ body {
     flex-direction: column;
     gap: 30px;
     transition: opacity 1.2s ease-in;
+    position: relative;
+    z-index: 2;
 }
 
 .lock-overlay {
@@ -87,7 +130,6 @@ body {
     text-transform: uppercase;
 }
 
-/* --- GREETINGS FORM & DISPLAY --- */
 .greetings-form-container {
     background: rgba(255, 255, 255, 0.9);
     padding: 15px;
@@ -122,7 +164,15 @@ body {
     text-align: left;
 }
 .greeting-card h4 { margin: 0 0 5px 0; color: #4a4a4a; font-size: 1rem; }
-.greeting-card p { margin: 0; font-size: 0.95rem; color: #555; }
+
+/* Preserves paragraph format perfectly! */
+.greeting-card p { 
+    margin: 0; 
+    font-size: 0.95rem; 
+    color: #555; 
+    white-space: pre-wrap; 
+}
+
 .greeting-card .reaction-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
 .greeting-card .reaction-btn {
     background: #fff;
@@ -180,12 +230,10 @@ body {
 .memory-card.revealed .card-back { transform: rotateY(-180deg); }
 .memory-card.revealed .card-front { transform: rotateY(0deg); }
 
-/* Backup Tools Styling */
 .backup-tools { margin-top: 15px; display: flex; gap: 10px; justify-content: center; }
 .backup-tools button, .backup-tools label { font-size: 0.7rem; padding: 4px 8px; background: #eee; color: #555; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-weight: 600; }
 .backup-tools button:hover, .backup-tools label:hover { background: #ddd; }
 
-/* --- LOGIN SCREEN --- */
 .login-container {
     background: white;
     padding: 30px;
@@ -214,7 +262,6 @@ body {
 }
 .practice-btn:active { transform: scale(0.96); }
 
-/* --- HERO PROFILE LAYOUT --- */
 .hero-section {
     padding: 30px 10px 10px;
     position: relative;
@@ -259,7 +306,6 @@ body {
     .hero-profile-layout { flex-direction: column; text-align: center; gap: 15px; }
 }
 
-/* Content Blocks */
 .content-section {
     background: var(--card-bg);
     border-radius: 24px;
@@ -272,7 +318,6 @@ body {
 
 .content-section h2 { font-size: 1.3rem; margin-bottom: 20px; color: #4a4a4a; }
 
-/* Timeline Layout */
 .timeline {
     position: relative;
     padding-left: 30px;
@@ -292,7 +337,6 @@ body {
 .timeline-panel h4 { font-size: 0.9rem; color: #555; margin-bottom: 5px; }
 .timeline-panel p { font-size: 0.9rem; color: #666; }
 
-/* Interactive Gift Card Styling */
 .gift-container { text-align: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
 .ribbon-banner {
@@ -318,7 +362,6 @@ body {
 .instructions { font-size: 0.8rem; color: #666; padding: 0 10px; }
 .hidden { display: none !important; }
 
-/* Photo Scroller */
 .media-scroller {
     display: flex; gap: 12px; overflow-x: auto; padding: 10px 0; margin-top: 10px;
     scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
@@ -334,7 +377,6 @@ body {
 }
 .gallery-img:active { transform: scale(0.98); }
 
-/* Full-Screen Lightbox */
 .lightbox {
     display: none; position: fixed; z-index: 20000; left: 0; top: 0; width: 100%; height: 100%;
     background-color: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); justify-content: center; align-items: center;
@@ -367,80 +409,219 @@ body {
 
 @media (max-width: 480px) {
     .lightbox-nav { padding: 12px 8px; font-size: 18px; width: 40px; height: 40px; }
-    .prev { left: 10px; }
-    .next { right: 10px; }
 }
 
-/* --- QUIZ STYLING & ANIMATIONS --- */
-.quiz-box { background: #faf5ff; border: 2px dashed var(--secondary-color); border-radius: 16px; padding: 20px; margin-top: 15px; text-align: left; }
-.quiz-progress { font-size: 0.8rem; color: var(--primary-color); font-weight: bold; margin-bottom: 8px; }
-#questionText { font-size: 1.1rem; color: #333; margin-bottom: 15px; line-height: 1.4; font-weight: 600; }
-.choices-grid { display: flex; flex-direction: column; gap: 10px; }
+/* ==========================================
+   GLOBAL TAP EFFECT (Yellow Firework Particle Burst)
+   ========================================== */
+.sparkle-burst {
+    position: fixed;
+    pointer-events: none;
+    z-index: 99999;
+    width: 0;
+    height: 0;
+}
+
+.sparkle-particle {
+    position: absolute;
+    background: #ffd166; /* Vibrant pastel golden yellow */
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 6px #ffd166, 0 0 12px #ffb703;
+    animation: particleShoot ease-out forwards;
+}
+
+@keyframes particleShoot {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(0);
+        opacity: 0;
+    }
+}
+/* =======================================================
+   QUIZ & ARCADE EXTRA STYLES (DO NOT CHANGE YOUR REI BG)
+   ======================================================= */
+#quizContainer {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 30px rgba(187, 148, 242, 0.15);
+    border: 1px solid rgba(255, 117, 143, 0.2);
+    max-width: 440px;
+    margin: 20px auto;
+}
+
+#choicesGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+@media (min-width: 400px) {
+    #choicesGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
 
 .choice-btn {
-    background: white; border: 2px solid #e2d5f3; padding: 12px 15px;
-    border-radius: 12px; font-size: 0.95rem; color: #444; cursor: pointer;
-    text-align: left; transition: all 0.2s ease; font-family: inherit; font-weight: 500;
+    background: #ffffff;
+    border: 2px solid #f3e8ff;
+    border-radius: 12px;
+    padding: 12px 15px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.02);
 }
-.choice-btn:hover { border-color: var(--primary-color); background: #fff5f6; transform: translateY(-2px); }
 
-.btn-success-pop { animation: successPop 0.5s ease forwards; border-color: #2a9d8f !important; background: #e2f7f4 !important; color: #2a9d8f !important; font-weight: bold; }
-@keyframes successPop { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+.choice-btn:hover {
+    border-color: var(--primary-color);
+    background: #fff5f6;
+    transform: translateY(-2px);
+}
 
-.btn-error-shake { animation: errorShake 0.4s cubic-bezier(.36,.07,.19,.97) both; border-color: #d90429 !important; background: #ffe3e6 !important; color: #d90429 !important; }
-@keyframes errorShake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+.choice-btn:active {
+    transform: scale(0.97);
+}
 
-.quiz-feedback-msg { font-size: 0.85rem; font-weight: bold; margin-top: 12px; text-align: center; min-height: 20px; }
+/* Success / Failure Animations for Quiz */
+.btn-success-pop {
+    background: #2a9d8f !important;
+    color: white !important;
+    border-color: #2a9d8f !important;
+    animation: successPop 0.4s ease-out;
+}
+
+.btn-error-shake {
+    background: #d90429 !important;
+    color: white !important;
+    border-color: #d90429 !important;
+    animation: errorShake 0.4s ease-in-out;
+}
+
+@keyframes successPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+.quiz-feedback-msg {
+    margin-top: 15px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
 .quiz-correct { color: #2a9d8f; }
 .quiz-wrong { color: #d90429; }
 
-/* Animated Gift Box */
-.gift-box-animated { font-size: 3.5rem; margin: 0 auto 15px; text-align: center; display: inline-block; cursor: pointer; line-height: 1; transition: transform 0.2s ease; user-select: none; }
-.gift-box-animated:hover { animation: shakeBox 0.5s infinite linear; }
-@keyframes shakeBox { 0% { transform: scale(1) rotate(0deg); } 20% { transform: scale(1.1) rotate(-4deg); } 40% { transform: scale(1.1) rotate(4deg); } 60% { transform: scale(1.1) rotate(-4deg); } 80% { transform: scale(1.1) rotate(4deg); } 100% { transform: scale(1) rotate(0deg); } }
+/* Arcade Step Tracker & Game Containers */
+.arcade-console {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(187, 148, 242, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    text-align: center;
+}
 
-.gift-bounce { animation: bounceJump 0.4s ease-out; }
-@keyframes bounceJump { 0% { transform: translateY(0); } 50% { transform: translateY(-20px) scale(1.2); } 100% { transform: translateY(0); } }
+.arcade-header h2 {
+    color: var(--primary-color);
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+}
 
-/* Screen Tap Burst */
-.click-burst { position: fixed; width: 20px; height: 20px; border: 3px solid var(--primary-color); border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); animation: burstOut 0.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; z-index: 99999; }
-@keyframes burstOut { 0% { width: 0px; height: 0px; opacity: 1; border-color: var(--primary-color); } 50% { border-color: var(--secondary-color); } 100% { width: 60px; height: 60px; opacity: 0; border-width: 1px; } }
+.arcade-steps {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    background: #faf5ff;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid #f3e8ff;
+}
 
-/* --- FLOATING & ROTATING REI PLUSHIES BACKGROUND --- */
-.rei-bg-layer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; overflow: hidden; }
-.rei-plush { position: absolute; width: 65px; height: 65px; background-image: url('pics/rei-plush.png'); background-size: contain; background-repeat: no-repeat; opacity: 0.25; }
+.step {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: #eee;
+    color: #777;
+}
 
-.bubble-1 { top: 8%; left: 5%; opacity: 0.5; animation: floatAndSpin 14s infinite linear; }
-.bubble-2 { top: 18%; right: 12%; opacity: 0.5; animation: floatAndSpin 18s infinite linear reverse; }
-.bubble-3 { top: 32%; left: 45%; opacity: 0.5; animation: floatAndSpin 20s infinite linear; } 
-.bubble-4 { top: 50%; right: 8%; opacity: 0.5; animation: floatAndSpin 22s infinite linear; }
-.bubble-5 { top: 62%; left: 15%; opacity: 0.5; animation: floatAndSpin 15s infinite linear reverse; }
-.bubble-6 { top: 72%; left: 48%; opacity: 0.5; animation: floatAndSpin 24s infinite linear; } 
-.bubble-7 { top: 85%; left: 8%; opacity: 0.5; animation: floatAndSpin 17s infinite linear; }
-.bubble-8 { top: 92%; right: 15%; opacity: 0.5; animation: floatAndSpin 21s infinite linear reverse; }
-.bubble-9  { top: 5%; left: 30%; opacity: 0.5; animation: floatAndSpin 16s infinite linear; }
-.bubble-10 { top: 15%; right: 35%; opacity: 0.5; animation: floatAndSpin 19s infinite linear reverse; }
-.bubble-11 { top: 25%; left: 10%; opacity: 0.5; animation: floatAndSpin 23s infinite linear; }
-.bubble-12 { top: 35%; right: 25%; opacity: 0.5; animation: floatAndSpin 15s infinite linear; }
-.bubble-13 { top: 45%; left: 60%; opacity: 0.5; animation: floatAndSpin 21s infinite linear reverse; }
-.bubble-14 { top: 55%; right: 40%; opacity: 0.5; animation: floatAndSpin 18s infinite linear; }
-.bubble-15 { top: 65%; left: 25%; opacity: 0.5; animation: floatAndSpin 25s infinite linear reverse; }
-.bubble-16 { top: 75%; right: 10%; opacity: 0.5; animation: floatAndSpin 17s infinite linear; }
-.bubble-17 { top: 80%; left: 70%; opacity: 0.5; animation: floatAndSpin 20s infinite linear reverse; }
-.bubble-18 { top: 95%; right: 30%; opacity: 0.5; animation: floatAndSpin 22s infinite linear; }
-.bubble-19 { top: 12%; left: 75%; opacity: 0.5; animation: floatAndSpin 19s infinite linear reverse; }
-.bubble-20 { top: 28%; right: 5%; opacity: 0.5; animation: floatAndSpin 16s infinite linear; }
-.bubble-21 { top: 42%; left: 35%; opacity: 0.5; animation: floatAndSpin 24s infinite linear; }
-.bubble-22 { top: 58%; right: 60%; opacity: 0.5; animation: floatAndSpin 15s infinite linear reverse; }
-.bubble-23 { top: 68%; left: 85%; opacity: 0.5; animation: floatAndSpin 21s infinite linear; }
-.bubble-24 { top: 88%; right: 45%; opacity: 0.5; animation: floatAndSpin 18s infinite linear reverse; }
-.bubble-25 { top: 2%; left: 55%; opacity: 0.5; animation: floatAndSpin 23s infinite linear; }
-.bubble-26 { top: 22%; right: 70%; opacity: 0.5; animation: floatAndSpin 17s infinite linear reverse; }
-.bubble-27 { top: 38%; left: 20%; opacity: 0.5; animation: floatAndSpin 20s infinite linear; }
-.bubble-28 { top: 48%; right: 85%; opacity: 0.5; animation: floatAndSpin 25s infinite linear reverse; }
-.bubble-29 { top: 78%; left: 40%; opacity: 0.5; animation: floatAndSpin 16s infinite linear; }
-.bubble-30 { top: 90%; right: 65%; opacity: 0.5; animation: floatAndSpin 22s infinite linear reverse; }
+.step-active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 3px 8px rgba(255, 117, 143, 0.3);
+}
 
-@keyframes floatAndSpin { 0% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-15px) rotate(180deg); } 100% { transform: translateY(0) rotate(360deg); } }
+.step-done {
+    background: #e2fcf7;
+    color: #2a9d8f;
+    border: 1px solid #c5f6ee;
+}
 
-#flappyCanvasContainer canvas, #crosswalkCanvasContainer canvas { display: block; max-width: 100%; height: auto; }
+.step-arrow {
+    font-size: 0.7rem;
+    color: #bbb;
+}
+
+.arcade-game-area {
+    margin-top: 15px;
+}
+
+.game-container {
+    animation: zoomIn 0.3s ease-out;
+}
+
+.game-instructions {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+.score-board {
+    font-weight: 700;
+    color: var(--secondary-color);
+    margin-bottom: 12px;
+    font-size: 1rem;
+}
+
+/* Memory Grid Game styles */
+.memory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    max-width: 300px;
+    margin: 15px auto 0;
+    justify-items: center;
+}
+
+.card-front-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 1.8rem;
+}

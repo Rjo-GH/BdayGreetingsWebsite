@@ -1,7 +1,7 @@
 // ==========================================
 // CONFIGURATION & SECURITY MANAGEMENT
 // ==========================================
-const IS_DRY_RUN = false; 
+const IS_DRY_RUN = true; 
 
 // ⚙️ REI CONFIGURATION: Adjust how many floating Rei's appear!
 const NUM_ROTATING_REIS = 30; 
@@ -63,6 +63,7 @@ function getReactionCounts(key) {
 }
 
 function updateReactionCountsInRow(row, counts) {
+    if (!row) return;
     row.querySelectorAll('.reaction-btn').forEach((btn) => {
         const reactionId = btn.dataset.reactionId;
         const countSpan = btn.querySelector('.reaction-count');
@@ -73,70 +74,56 @@ function updateReactionCountsInRow(row, counts) {
 }
 
 async function updateGreetingReaction(key, reactionId, row) {
-    // Prefer server-backed update when row has an associated Sheety row id
     const rowId = row && row.dataset && row.dataset.rowId;
-    if (rowId) {
-        try {
-            // Read current server counts
-            const res = await fetch(`${SHEETY_API_URL}/${rowId}`);
-            if (res.ok) {
-                const data = await res.json();
-                const serverRow = data.sheet1 || {};
-                const updated = {};
-                
-                REACTION_TYPES.forEach(t => {
-                    // FIX: Match Sheety's camelCase naming convention (reactionLove, reactionSparkle, etc.)
-                    const colName = `reaction${t.id.charAt(0).toUpperCase() + t.id.slice(1)}`;
-                    const current = parseInt(serverRow[colName] || 0, 10);
-                    updated[colName] = current + (t.id === reactionId ? 1 : 0);
-                });
-
-                const payload = { sheet1: updated };
-                const patchRes = await fetch(`${SHEETY_API_URL}/${rowId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (patchRes.ok) {
-                    // Update UI with new counts from server response
-                    const patched = await patchRes.json();
-                    const patchedRow = patched.sheet1 || {};
-                    const counts = {};
-                    REACTION_TYPES.forEach(t => {
-                        const colName = `reaction${t.id.charAt(0).toUpperCase() + t.id.slice(1)}`;
-                        counts[t.id] = patchedRow[colName] || 0;
-                    });
-                    updateReactionCountsInRow(row, counts);
-                    return;
-                }
-            }
-        } catch (err) {
-            console.warn('Server reaction update failed, queuing locally', err);
-            // fall through to local queue
-        }
-
-        // Queue fallback for later retry
-        const q = JSON.parse(localStorage.getItem('sheetyReactionQueue') || '[]');
-        q.push({ rowId, reactionId, ts: new Date().toISOString() });
-        localStorage.setItem('sheetyReactionQueue', JSON.stringify(q));
+    
+    // 1. Optimistic UI update instantly for immediate feedback
+    const targetBtnSpan = row.querySelector(`[data-reaction-id="${reactionId}"] .reaction-count`);
+    let newValue = 1;
+    if (targetBtnSpan) {
+        newValue = parseInt(targetBtnSpan.innerText || 0, 10) + 1;
+        targetBtnSpan.innerText = newValue;
     }
 
-    // Fallback: localStorage optimistic update
+    // 2. Update Local Storage Fallback
     const storage = loadReactionStorage();
     const counts = storage[key] || {};
     counts[reactionId] = (counts[reactionId] || 0) + 1;
     storage[key] = counts;
     saveReactionStorage(storage);
-    updateReactionCountsInRow(row, getReactionCounts(key));
+
+    // 3. Sync to Server safely (sending BOTH lowercase and camelCase to satisfy Sheety backend)
+    if (rowId) {
+        try {
+            const lowerColName = `reaction${reactionId.toLowerCase()}`;
+            const camelColName = `reaction${reactionId.charAt(0).toUpperCase() + reactionId.slice(1)}`;
+            
+            const updated = {};
+            updated[lowerColName] = newValue;
+            updated[camelColName] = newValue; 
+
+            const payload = { sheet1: updated };
+            const patchRes = await fetch(`${SHEETY_API_URL}/${rowId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!patchRes.ok) {
+                throw new Error('Failed to update server');
+            }
+        } catch (err) {
+            console.warn('Server reaction update failed, queuing locally', err);
+            const q = JSON.parse(localStorage.getItem('sheetyReactionQueue') || '[]');
+            q.push({ rowId, reactionId, ts: new Date().toISOString() });
+            localStorage.setItem('sheetyReactionQueue', JSON.stringify(q));
+        }
+    }
 }
 
 function createReactionRow(key) {
     const counts = getReactionCounts(key);
     const row = document.createElement('div');
     row.className = 'reaction-row';
-
-    // row.dataset.rowId is set by renderGreetings when available
 
     REACTION_TYPES.forEach((type) => {
         const btn = document.createElement('button');
@@ -316,7 +303,6 @@ window.submitGreeting = async function() {
 
     if(submitBtn) { submitBtn.disabled = true; submitBtn.innerText = "Sending..."; }
 
-    // Structure mapped to CamelCase columns in Sheety based on headers
     const payload = {
         sheet1: {
             name: nameEl.value,
@@ -367,22 +353,21 @@ window.renderGreetings = async function() {
         
         display.innerHTML = "";
         
-        // Reverse array to show latest greeting at the top
         [...greetings].reverse().forEach(g => {
             const card = document.createElement("div");
             card.className = "greeting-card";
             
-            // Handle potentially empty/undefined rows returned from Sheety
             const gName = g.name || "Anonymous";
             const gMsg = g.message || "";
             const gTime = g.timestamp || "";
             const messageKey = buildGreetingKey({ name: gName, message: gMsg, timestamp: gTime });
 
-            // If Sheety exposes reaction columns, prefer server counts
+            // Checking both lowercase and camelCase representation from Sheety
             const serverCounts = {};
             REACTION_TYPES.forEach(t => { 
-                const colName = `reaction${t.id.charAt(0).toUpperCase() + t.id.slice(1)}`;
-                serverCounts[t.id] = g[colName] || 0; 
+                const camelKey = `reaction${t.id.charAt(0).toUpperCase() + t.id.slice(1)}`; 
+                const lowerKey = `reaction${t.id.toLowerCase()}`; 
+                serverCounts[t.id] = g[lowerKey] !== undefined ? g[lowerKey] : (g[camelKey] || 0); 
             });
 
             card.innerHTML = `
@@ -391,9 +376,8 @@ window.renderGreetings = async function() {
                 <div style="font-size: 0.7rem; color: #aaa; margin-top: 5px;">${gTime}</div>
             `;
             const reactionRow = createReactionRow(messageKey);
-            // Attach Sheety row id so reactions can be updated server-side when possible
             if (g.id) reactionRow.dataset.rowId = g.id;
-            // If serverCounts provided, set them on the row UI
+            
             if (Object.values(serverCounts).some(v => v > 0)) {
                 updateReactionCountsInRow(reactionRow, serverCounts);
             }
@@ -452,13 +436,436 @@ window.addEventListener("keydown", (e) => {
     }
 });
 
-window.launchMemoryGame = function() {
-    if (document.getElementById("practiceArena").classList.contains("hidden")) {
-        window.startPracticeMode();
-        setTimeout(() => window.switchPracticeStage(3), 120);
-    } else {
-        window.switchPracticeStage(3);
+// ==========================================
+// ARCADE CHAIN ENGINE (Flappy Rei -> Cat Catcher -> Memory Match)
+// ==========================================
+let currentArcadeStage = 1;
+
+window.initArcadeChain = function() {
+    const arcadeState = document.getElementById("arcadeState");
+    if (!arcadeState) return;
+    
+    arcadeState.innerHTML = `
+        <div class="arcade-console">
+            <div class="arcade-header">
+                <h2>🎮 Rei's Arcade Console 🎮</h2>
+                <div class="arcade-steps">
+                    <span class="step step-done">✅ Quiz</span>
+                    <span class="step-arrow">➡️</span>
+                    <span id="step-flappy" class="step step-active">🎈 Flappy Rei</span>
+                    <span class="step-arrow">➡️</span>
+                    <span id="step-cat" class="step">🐱 Cat Game</span>
+                    <span class="step-arrow">➡️</span>
+                    <span id="step-memory" class="step">🧠 Memory Match</span>
+                </div>
+            </div>
+            <div id="arcadeGameArea" class="arcade-game-area"></div>
+        </div>
+    `;
+    
+    loadArcadeStage(1);
+};
+
+function loadArcadeStage(stage) {
+    currentArcadeStage = stage;
+    
+    const flappyStep = document.getElementById("step-flappy");
+    const catStep = document.getElementById("step-cat");
+    const memoryStep = document.getElementById("step-memory");
+    
+    if (flappyStep && catStep && memoryStep) {
+        flappyStep.className = stage === 1 ? "step step-active" : (stage > 1 ? "step step-done" : "step");
+        catStep.className = stage === 2 ? "step step-active" : (stage > 2 ? "step step-done" : "step");
+        memoryStep.className = stage === 3 ? "step step-active" : "step";
+        
+        if (stage > 1) flappyStep.innerHTML = "✅ Flappy Rei";
+        if (stage > 2) catStep.innerHTML = "✅ Cat Game";
     }
+    
+    const area = document.getElementById("arcadeGameArea");
+    if (!area) return;
+    area.innerHTML = "";
+    
+    if (stage === 1) {
+        startFlappyRei(area);
+    } else if (stage === 2) {
+        startCatGame(area);
+    } else if (stage === 3) {
+        startMemoryMatchGame(area);
+    }
+}
+
+/* 1. Flappy Rei Game Engine */
+function startFlappyRei(container) {
+    container.innerHTML = `
+        <div class="game-container">
+            <p class="game-instructions">Tap screen/canvas to jump! Clear 5 pipes to pass! 🎈</p>
+            <div class="score-board">Score: <span id="flappyScore">0</span> / 5</div>
+            <canvas id="flappyCanvas" width="320" height="240" style="border: 2px dashed var(--secondary-color); border-radius: 12px; background: #e8f0fe; display: block; margin: 0 auto; max-width: 100%;"></canvas>
+        </div>
+    `;
+    
+    const canvas = document.getElementById("flappyCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    
+    let score = 0;
+    let birdY = 100;
+    let birdVelocity = 0;
+    const gravity = 0.22;
+    const lift = -4.5;
+    let isGameOver = false;
+    let animationId;
+    
+    const reiImg = new Image();
+    reiImg.src = 'pics/rei-plush.png';
+    
+    const pipes = [];
+    const pipeWidth = 35;
+    const pipeGap = 85;
+    let frameCount = 0;
+    
+    function flap() {
+        if (isGameOver) return;
+        birdVelocity = lift;
+        window.playGameAudio("quizCorrectSound");
+    }
+    
+    canvas.addEventListener("click", flap);
+    
+    function gameLoop() {
+        if (isGameOver) return;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Background color
+        ctx.fillStyle = "#e0f2fe";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Physics
+        birdVelocity += gravity;
+        birdY += birdVelocity;
+        
+        if (birdY > canvas.height - 20) birdY = canvas.height - 20;
+        if (birdY < 0) birdY = 0;
+        
+        // Draw Rei Plush
+        if (reiImg.complete && reiImg.naturalWidth !== 0) {
+            ctx.drawImage(reiImg, 40, birdY - 15, 30, 30);
+        } else {
+            ctx.font = "24px sans-serif";
+            ctx.fillText("👧", 40, birdY + 10);
+        }
+        
+        // Spawn pipes
+        if (frameCount % 100 === 0) {
+            const minH = 20;
+            const maxH = canvas.height - pipeGap - minH;
+            const topHeight = Math.floor(Math.random() * (maxH - minH)) + minH;
+            pipes.push({
+                x: canvas.width,
+                top: topHeight,
+                bottom: canvas.height - topHeight - pipeGap,
+                passed: false
+            });
+        }
+        
+        // Move & Draw pipes
+        for (let i = pipes.length - 1; i >= 0; i--) {
+            const p = pipes[i];
+            p.x -= 1.8;
+            
+            ctx.fillStyle = "var(--secondary-color)";
+            ctx.fillRect(p.x, 0, pipeWidth, p.top);
+            ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+            
+            // Collision Check
+            if (40 + 12 > p.x && 40 - 12 < p.x + pipeWidth) {
+                if (birdY - 12 < p.top || birdY + 12 > canvas.height - p.bottom) {
+                    gameOver();
+                }
+            }
+            
+            // Score tracking
+            if (!p.passed && p.x + pipeWidth < 40) {
+                p.passed = true;
+                score++;
+                const sEl = document.getElementById("flappyScore");
+                if (sEl) sEl.innerText = score;
+                
+                if (score >= 5) {
+                    winStage();
+                }
+            }
+            
+            if (p.x + pipeWidth < 0) pipes.splice(i, 1);
+        }
+        
+        frameCount++;
+        animationId = requestAnimationFrame(gameLoop);
+    }
+    
+    function gameOver() {
+        isGameOver = true;
+        cancelAnimationFrame(animationId);
+        window.playGameAudio("quizWrongSound");
+        
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "white";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Game Over!", canvas.width / 2, canvas.height / 2 - 10);
+        ctx.font = "12px sans-serif";
+        ctx.fillText("Click Canvas to Restart", canvas.width / 2, canvas.height / 2 + 15);
+        
+        canvas.onclick = () => {
+            canvas.onclick = flap;
+            startFlappyRei(container);
+        };
+    }
+    
+    function winStage() {
+        isGameOver = true;
+        cancelAnimationFrame(animationId);
+        window.playGameAudio("quizWinSound");
+        
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "var(--primary-color)";
+        ctx.font = "bold 20px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("🎉 Stage Clear! 🎉", canvas.width / 2, canvas.height / 2);
+        
+        setTimeout(() => loadArcadeStage(2), 1500);
+    }
+    
+    gameLoop();
+}
+
+/* 2. Cat Game Engine */
+function startCatGame(container) {
+    container.innerHTML = `
+        <div class="game-container">
+            <p class="game-instructions">Slide your finger/mouse on canvas to catch 10 hearts! 🐱</p>
+            <div class="score-board">Caught: <span id="catScore">0</span> / 10</div>
+            <canvas id="catCanvas" width="320" height="240" style="border: 2px dashed var(--primary-color); border-radius: 12px; background: #fff5f6; display: block; margin: 0 auto; max-width: 100%; cursor: none;"></canvas>
+        </div>
+    `;
+    
+    const canvas = document.getElementById("catCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    
+    let score = 0;
+    let isGameOver = false;
+    let animationId;
+    
+    let catX = canvas.width / 2;
+    const catY = canvas.height - 30;
+    const catW = 45;
+    const catH = 20;
+    
+    const hearts = [];
+    let spawnTimer = 0;
+    
+    function updatePos(clientX) {
+        const rect = canvas.getBoundingClientRect();
+        catX = ((clientX - rect.left) / rect.width) * canvas.width;
+        if (catX < catW / 2) catX = catW / 2;
+        if (catX > canvas.width - catW / 2) catX = canvas.width - catW / 2;
+    }
+    
+    canvas.addEventListener("mousemove", (e) => updatePos(e.clientX));
+    canvas.addEventListener("touchmove", (e) => {
+        if (e.touches.length > 0) updatePos(e.touches[0].clientX);
+        e.preventDefault();
+    }, { passive: false });
+    
+    function gameLoop() {
+        if (isGameOver) return;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff0f2";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw Basket / Cat Basket
+        ctx.fillStyle = "var(--primary-color)";
+        ctx.beginPath();
+        ctx.roundRect(catX - catW / 2, catY, catW, catH, [0, 0, 8, 8]);
+        ctx.fill();
+        
+        // Cute Ears
+        ctx.beginPath();
+        ctx.moveTo(catX - catW / 2 + 3, catY);
+        ctx.lineTo(catX - catW / 2 + 11, catY - 8);
+        ctx.lineTo(catX - catW / 2 + 15, catY);
+        ctx.moveTo(catX + catW / 2 - 3, catY);
+        ctx.lineTo(catX + catW / 2 - 11, catY - 8);
+        ctx.lineTo(catX + catW / 2 - 15, catY);
+        ctx.fill();
+        
+        ctx.fillStyle = "white";
+        ctx.font = "10px sans-serif";
+        ctx.fillText("🐱", catX - 6, catY + 14);
+        
+        // Spawn Hearts
+        spawnTimer++;
+        if (spawnTimer % 40 === 0) {
+            hearts.push({
+                x: Math.random() * (canvas.width - 20) + 10,
+                y: -10,
+                speed: 1.8 + Math.random() * 1.5,
+                size: 14 + Math.random() * 8
+            });
+        }
+        
+        // Handle Hearts falling
+        for (let i = hearts.length - 1; i >= 0; i--) {
+            const h = hearts[i];
+            h.y += h.speed;
+            
+            ctx.fillStyle = "#ff4d6d";
+            ctx.font = `${h.size}px sans-serif`;
+            ctx.textAlign = "center";
+            ctx.fillText("💖", h.x, h.y);
+            
+            // Intersection catch
+            if (h.y >= catY && h.y <= catY + catH) {
+                if (h.x > catX - catW / 2 - 5 && h.x < catX + catW / 2 + 5) {
+                    hearts.splice(i, 1);
+                    score++;
+                    window.playGameAudio("quizCorrectSound");
+                    
+                    const scoreEl = document.getElementById("catScore");
+                    if (scoreEl) scoreEl.innerText = score;
+                    
+                    if (score >= 10) {
+                        winStage();
+                    }
+                    continue;
+                }
+            }
+            if (h.y > canvas.height + 20) hearts.splice(i, 1);
+        }
+        
+        animationId = requestAnimationFrame(gameLoop);
+    }
+    
+    function winStage() {
+        isGameOver = true;
+        cancelAnimationFrame(animationId);
+        window.playGameAudio("quizWinSound");
+        
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "var(--primary-color)";
+        ctx.font = "bold 20px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("🎉 Stage Clear! 🎉", canvas.width / 2, canvas.height / 2);
+        
+        setTimeout(() => loadArcadeStage(3), 1500);
+    }
+    
+    gameLoop();
+}
+
+/* 3. Memory Match Engine */
+function startMemoryMatchGame(container) {
+    container.innerHTML = `
+        <div class="game-container">
+            <p class="game-instructions">Match all the duplicate pairs to unlock your gift! 🧠</p>
+            <div id="memoryGrid" class="memory-grid"></div>
+        </div>
+    `;
+    
+    const grid = document.getElementById("memoryGrid");
+    if (!grid) return;
+    
+    const emojis = ["🌸", "💖", "🐱", "🍦", "🎀", "🍰"];
+    let cardsArray = [...emojis, ...emojis];
+    
+    cardsArray.sort(() => Math.random() - 0.5);
+    
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+    let matchesFound = 0;
+    
+    cardsArray.forEach((emoji) => {
+        const card = document.createElement("div");
+        card.className = "memory-card";
+        card.dataset.emoji = emoji;
+        
+        card.innerHTML = `
+            <div class="card-back"></div>
+            <div class="card-front">
+                <div class="card-front-content">${emoji}</div>
+            </div>
+        `;
+        
+        card.addEventListener("click", () => {
+            if (lockBoard) return;
+            if (card === firstCard) return;
+            if (card.classList.contains("revealed")) return;
+            
+            card.classList.add("revealed");
+            
+            if (!firstCard) {
+                firstCard = card;
+                return;
+            }
+            
+            secondCard = card;
+            checkForMatch();
+        });
+        
+        grid.appendChild(card);
+    });
+    
+    function checkForMatch() {
+        lockBoard = true;
+        const isMatch = firstCard.dataset.emoji === secondCard.dataset.emoji;
+        
+        if (isMatch) {
+            disableCards();
+        } else {
+            unflipCards();
+        }
+    }
+    
+    function disableCards() {
+        window.playGameAudio("quizCorrectSound");
+        matchesFound++;
+        resetBoard();
+        
+        if (matchesFound === emojis.length) {
+            setTimeout(() => {
+                window.playGameAudio("quizWinSound");
+                alert("🎉 Success! You've conquered all challenges! 🎁");
+                window.handleActualGiftUnlock();
+            }, 800);
+        }
+    }
+    
+    function unflipCards() {
+        window.playGameAudio("quizWrongSound");
+        setTimeout(() => {
+            firstCard.classList.remove("revealed");
+            secondCard.classList.remove("revealed");
+            resetBoard();
+        }, 1000);
+    }
+    
+    function resetBoard() {
+        [firstCard, secondCard] = [null, null];
+        lockBoard = false;
+    }
+}
+
+window.launchMemoryGame = function() {
+    window.initArcadeChain();
+    setTimeout(() => loadArcadeStage(3), 100);
 };
 
 // ==========================================
@@ -521,27 +928,30 @@ function loadQuizQuestion() {
     if (feedbackElem) feedbackElem.innerText = "";
 }
 
-// UNIVERSAL POPUP CONTROLLER
 window.showReactionPopup = function(imgSrc, title, desc, color, duration, callback) {
     const pop = document.getElementById("dynamicReactionPop");
     const img = document.getElementById("reactionImage");
     const titleEl = document.getElementById("reactionTitle");
     const descEl = document.getElementById("reactionDesc");
     
-    img.src = imgSrc;
-    titleEl.innerText = title;
-    titleEl.style.color = color;
-    descEl.innerText = desc;
+    if (img) img.src = imgSrc;
+    if (titleEl) {
+        titleEl.innerText = title;
+        titleEl.style.color = color;
+    }
+    if (descEl) descEl.innerText = desc;
     
-    pop.classList.remove("hidden");
-    
-    setTimeout(() => {
-        pop.classList.add("hidden");
+    if (pop) {
+        pop.classList.remove("hidden");
+        setTimeout(() => {
+            pop.classList.add("hidden");
+            if(callback) callback();
+        }, duration);
+    } else {
         if(callback) callback();
-    }, duration);
+    }
 };
 
-// --- 🌟 GLOBAL AUDIO HELPER ---
 window.playGameAudio = function(audioId) {
     const audio = document.getElementById(audioId);
     if (audio) {
@@ -560,13 +970,12 @@ function handleChoiceSelection(selectedIdx, clickedBtn) {
     allBtns.forEach(b => b.style.pointerEvents = 'none');
 
     if (selectedIdx === currentData.correct) {
-        window.playGameAudio("quizCorrectSound"); // 🎵 CORRECT SOUND
+        window.playGameAudio("quizCorrectSound"); 
         clickedBtn.classList.add("btn-success-pop");
         feedback.className = "quiz-feedback-msg quiz-correct";
         feedback.innerText = "Correct! Spot on! 🎉";
         
-        // Show Happy Rei Popup!
-        showReactionPopup(currentData.imgCorrect, "CORRECT!", "Rei is proud of you! ✨", "#2a9d8f", 1600, () => {
+        window.showReactionPopup(currentData.imgCorrect, "CORRECT!", "Rei is proud of you! ✨", "#2a9d8f", 1600, () => {
             quizIndex++;
             if (quizIndex < QUIZ_QUESTIONS.length) {
                 loadQuizQuestion();
@@ -576,13 +985,12 @@ function handleChoiceSelection(selectedIdx, clickedBtn) {
         });
 
     } else {
-        window.playGameAudio("quizWrongSound"); // 🎵 WRONG SOUND
+        window.playGameAudio("quizWrongSound"); 
         clickedBtn.classList.add("btn-error-shake");
         feedback.className = "quiz-feedback-msg quiz-wrong";
         feedback.innerText = "Ouch! Incorrect choice. Try that one again! 💕";
         
-        // Show Sad Rei Popup!
-        showReactionPopup(currentData.imgWrong, "WRONG ANSWER!", "Rei is mad, let's try again! 🥺", "#d90429", 1400, () => {
+        window.showReactionPopup(currentData.imgWrong, "WRONG ANSWER!", "Rei is mad, let's try again! 🥺", "#d90429", 1400, () => {
             clickedBtn.classList.remove("btn-error-shake");
             feedback.innerText = "";
             allBtns.forEach(b => b.style.pointerEvents = 'auto');
@@ -591,7 +999,7 @@ function handleChoiceSelection(selectedIdx, clickedBtn) {
 }
 
 function handleQuizSuccess() {
-    window.playGameAudio("quizWinSound"); // 🎵 QUIZ FINISHED SOUND
+    window.playGameAudio("quizWinSound"); 
     const quizBox = document.getElementById("quizContainer");
     if (quizBox) {
         quizBox.innerHTML = "<h3 style='color: #06d6a0; margin: 0;'>🎉 Access Granted! 🎉</h3><p style='color: #555; font-size: 0.9rem;'>Booting up Rei's Console System...</p>";
@@ -599,28 +1007,26 @@ function handleQuizSuccess() {
         setTimeout(() => {
             document.getElementById("lockedState").classList.add("hidden");
             document.getElementById("arcadeState").classList.remove("hidden");
-            
             document.getElementById("arcadeState").style.display = "flex";
-            if (typeof window.initArcadeChain === "function") {
-                window.initArcadeChain();
-            } else {
-                console.warn("initArcadeChain missing!");
-                window.handleActualGiftUnlock();
-            }
+            
+            window.initArcadeChain();
         }, 1500);
     }
 }
 
-// CALLED BY memory-game.js WHEN STAGE 3 IS BEATEN
 window.handleActualGiftUnlock = function() {
-    document.getElementById("arcadeState").classList.add("hidden");
-    document.getElementById("arcadeState").style.display = "none";
+    const arcadeState = document.getElementById("arcadeState");
+    if (arcadeState) {
+        arcadeState.classList.add("hidden");
+        arcadeState.style.display = "none";
+    }
     
     const unlockedState = document.getElementById("unlockedState");
-    unlockedState.classList.remove("hidden");
-    unlockedState.style.display = "flex";
+    if (unlockedState) {
+        unlockedState.classList.remove("hidden");
+        unlockedState.style.display = "flex";
+    }
     
-    // Quick burst of Reis on unlock!
     const unlockContainer = document.getElementById("mainReiBg");
     if (unlockContainer) {
         for (let i = 0; i < 20; i++) {
@@ -632,22 +1038,19 @@ window.handleActualGiftUnlock = function() {
         }
     }
 
-    // Attempt to notify owner via Sheety and update the unlock notice
     (async () => {
         const notifyTextEl = document.getElementById('ownerNotifyText');
         if (notifyTextEl) notifyTextEl.innerText = 'Notifying owner...';
         const ok = await notifyOwnerViaSheety('auto_unlock', { source: 'client' });
         if (notifyTextEl) {
             if (ok) notifyTextEl.innerText = 'Owner has been successfully notified!';
-            else notifyTextEl.innerText = 'Finished successfully! (Please screenshot this and send to Rjo to claim your prize xD)';
+            else notifyTextEl.innerText = 'Finished successfully! (Please screenshot this and send to Rjo along with your QR codeto claim your prize xD)';
         }
     })();
 };
 
-// Notify owner via Sheety notifications sheet
 async function notifyOwnerViaSheety(messageKey, meta = {}) {
     try {
-        // FIX: The root key MUST be 'notification' (singular endpoint name) for Sheety to accept it!
         const payload = { 
             notification: { 
                 messageKey: messageKey || '', 
@@ -665,7 +1068,6 @@ async function notifyOwnerViaSheety(messageKey, meta = {}) {
         return res.ok;
     } catch (err) {
         console.error('Notify owner failed:', err);
-        // queue locally for retry
         const q = JSON.parse(localStorage.getItem('sheetyNotifyQueue') || '[]');
         q.push({ messageKey, meta, ts: new Date().toISOString() });
         localStorage.setItem('sheetyNotifyQueue', JSON.stringify(q));
@@ -673,7 +1075,6 @@ async function notifyOwnerViaSheety(messageKey, meta = {}) {
     }
 }
 
-// Flush queued notifications
 async function flushSheetyNotifyQueue() {
     const q = JSON.parse(localStorage.getItem('sheetyNotifyQueue') || '[]');
     if (!Array.isArray(q) || q.length === 0) return;
@@ -687,21 +1088,6 @@ async function flushSheetyNotifyQueue() {
     localStorage.setItem('sheetyNotifyQueue', JSON.stringify(remaining));
 }
 
-// Helper to update reaction counts in an existing reaction row element
-function updateReactionCountsInRow(rowEl, counts) {
-    try {
-        const buttons = rowEl.querySelectorAll('.reaction-btn');
-        buttons.forEach(btn => {
-            const id = btn.dataset.reactionId;
-            if (counts[id] !== undefined) {
-                const badge = btn.querySelector('.reaction-count');
-                if (badge) badge.innerText = counts[id];
-            }
-        });
-    } catch (e) { console.warn('updateReactionCountsInRow failed', e); }
-}
-
-// Flush queued reaction updates
 async function flushSheetyReactionQueue() {
     const q = JSON.parse(localStorage.getItem('sheetyReactionQueue') || '[]');
     if (!Array.isArray(q) || q.length === 0) return;
@@ -716,9 +1102,12 @@ async function flushSheetyReactionQueue() {
             const updated = {};
             
             REACTION_TYPES.forEach(t => {
-                const colName = `reaction${t.id.charAt(0).toUpperCase() + t.id.slice(1)}`;
-                const current = parseInt(serverRow[colName] || 0, 10);
-                updated[colName] = current + (t.id === reactionId ? 1 : 0);
+                const camelColName = `reaction${t.id.charAt(0).toUpperCase() + t.id.slice(1)}`;
+                const lowerColName = `reaction${t.id.toLowerCase()}`;
+                const current = parseInt(serverRow[lowerColName] !== undefined ? serverRow[lowerColName] : (serverRow[camelColName] || 0), 10);
+                const incremented = current + (t.id === reactionId ? 1 : 0);
+                updated[lowerColName] = incremented;
+                updated[camelColName] = incremented;
             });
             const patchRes = await fetch(`${SHEETY_API_URL}/${rowId}`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sheet1: updated })
@@ -729,7 +1118,6 @@ async function flushSheetyReactionQueue() {
     localStorage.setItem('sheetyReactionQueue', JSON.stringify(remaining));
 }
 
-// Wire owner mark-as-sent button and flush queue on load
 document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('ownerMarkDone');
     const link = document.getElementById('viewSheetLink');
@@ -759,7 +1147,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     generateFloatingReis();
     await syncSecureTime();
 
-    // --- 🌟 LOGIN ENTER KEY LISTENER ---
     const loginUserEl = document.getElementById("loginUser");
     const loginPassEl = document.getElementById("loginPass");
     const handleLoginEnter = (e) => {
@@ -768,7 +1155,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (loginUserEl) loginUserEl.addEventListener("keydown", handleLoginEnter);
     if (loginPassEl) loginPassEl.addEventListener("keydown", handleLoginEnter);
 
-    // Populate images for gallery
     const galleryImages = document.querySelectorAll('.gallery-img');
     galleryImages.forEach((img, idx) => {
         allImages.push(img.src);
@@ -776,7 +1162,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         img.addEventListener('click', () => openLightbox(idx));
     });
 
-    // Close lightbox background click
     const modal = document.getElementById("lightboxModal");
     if (modal) {
         modal.addEventListener('click', (e) => {
@@ -784,6 +1169,47 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
     
-    // Load first question if on main page
     loadQuizQuestion();
+});
+
+// ==========================================
+// GLOBAL TAP EFFECT (Pure CSS/JS Golden Particle Burst)
+// ==========================================
+document.addEventListener("click", function(e) {
+    if (e.target.closest("button") || e.target.closest("input") || e.target.closest("textarea")) return;
+
+    const burstContainer = document.createElement("div");
+    burstContainer.className = "sparkle-burst";
+    burstContainer.style.left = `${e.clientX}px`;
+    burstContainer.style.top = `${e.clientY}px`;
+    document.body.appendChild(burstContainer);
+
+    const particleCount = 10;
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement("div");
+        particle.className = "sparkle-particle";
+        
+        const angle = (i / particleCount) * 2 * Math.PI + (Math.random() * 0.4 - 0.2);
+        const distance = 25 + Math.random() * 35; 
+        const x = Math.cos(angle) * distance;
+        const y = Math.sin(angle) * distance;
+
+        particle.style.setProperty('--x', `${x}px`);
+        particle.style.setProperty('--y', `${y}px`);
+        
+        const size = 3 + Math.random() * 4; 
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+
+        particle.style.animationDuration = `${0.5 + Math.random() * 0.4}s`;
+        particle.style.animationDelay = `${Math.random() * 0.05}s`;
+
+        burstContainer.appendChild(particle);
+    }
+
+    setTimeout(() => {
+        if (burstContainer.parentNode) {
+            burstContainer.parentNode.removeChild(burstContainer);
+        }
+    }, 1000);
 });
