@@ -1,7 +1,7 @@
 // ==========================================
 // CONFIGURATION & SECURITY MANAGEMENT
 // ==========================================
-const IS_DRY_RUN = true; 
+const IS_DRY_RUN = false; 
 
 // ⚙️ REI CONFIGURATION: Adjust how many floating Rei's appear!
 const NUM_ROTATING_REIS = 30; 
@@ -1044,7 +1044,7 @@ window.handleActualGiftUnlock = function() {
         const ok = await notifyOwnerViaSheety('auto_unlock', { source: 'client' });
         if (notifyTextEl) {
             if (ok) notifyTextEl.innerText = 'Owner has been successfully notified!';
-            else notifyTextEl.innerText = 'Finished successfully! (Please screenshot this and send to Rjo along with your QR codeto claim your prize xD)';
+            else notifyTextEl.innerText = 'Finished successfully! (Please screenshot this and send to Rjo along with your QR code to claim your prize xD)';
         }
     })();
 };
