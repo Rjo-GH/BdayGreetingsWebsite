@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Akina's Arcade 🎮</title>
+    <link rel="icon" type="image/png" href="pics/rei-plush.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Audio Files -->
+    <audio id="flappyBgMusic" src="music/flappy-bg.mp3" loop></audio>
+    <audio id="flappyTapSound" src="music/flappy-bird-fly.mp3"></audio>
+    <audio id="flappyPointSound" src="music/flappy-bird-point.mp3"></audio>
+    <audio id="flappyPowerupSound" src="music/flappy-powerup.mp3"></audio>
+    <audio id="flappyDieSound" src="music/ack.mp3"></audio>
+
+    <audio id="catBgMusic" src="music/cat-bg.mp3" loop></audio>
+    <audio id="catMoveSound" src="music/oiia-oiia-sound.mp3"></audio>
+    <audio id="catDieSound" src="music/roblox-death-sound_1.mp3"></audio>
+    <audio id="catWinSound" src="music/anime-wow-sound-effect-mp3cut.mp3"></audio>
+
+    <audio id="memoryFlipSound" src="music/flappy-bird-fly.mp3"></audio>
+    <audio id="memoryMatchSound" src="music/correct.mp3"></audio>
+    <audio id="memoryMismatchSound" src="music/punch-gaming-sound-effect-hd_RzlG1GE.mp3"></audio>
+    <audio id="memoryWinSound" src="music/anime-wow-sound-effect-mp3cut.mp3"></audio>
+
+    <div id="mainReiBg" class="rei-bg-layer"></div>
+
+    <main class="main-wrapper" style="opacity: 1; display: flex; z-index: 10;">
+        
+        <!-- MAIN MENU -->
+        <section class="content-section" id="gameMenu">
+            <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 5px;">🎮 Akina's Arcade</h2>
+            <p style="text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 20px;">Pick a game to play!</p>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button class="practice-btn" onclick="openGame('flappy')">🎈 Flappy Rei (Endurance)</button>
+                <button class="practice-btn" onclick="openGame('crosswalk')">🐱 Cat Crosswalk</button>
+                <button class="practice-btn" onclick="openGame('memory')">🧠 Memory Match</button>
+            </div>
+
+            <!-- LEADERBOARD -->
+            <div style="margin-top: 30px; background: #faf5ff; padding: 15px; border-radius: 12px; border: 1px solid #f3e8ff;">
+                <h3 style="color: var(--secondary-color); font-size: 1.1rem; text-align: center; margin-top: 0;">🏆 Flappy Rei Leaderboard</h3>
+                <div id="leaderboardList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; font-size: 0.9rem;">
+                    <p style="text-align: center; color: #888;">Loading scores...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- GAME CONTAINERS -->
+        <div id="flappyStage" class="hidden content-section" style="width: 100%; text-align: center;">
+            <h4 id="flappyScoreBoard" style="color: var(--primary-color); margin-bottom: 12px; margin-top: 5px; font-size: 1.2rem;">Score: 0</h4>
+            <div id="flappyCanvasContainer" style="display: flex; justify-content: center; align-items: center; border: 2px solid #fff; border-radius: 8px; background: #4ea8de; overflow: hidden; margin: 0 auto; width: 320px; max-width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>
+            <p style="color: #666; font-size: 0.8rem; margin-top: 10px;">Endurance Mode: Game slowly gets faster!</p>
+            <button class="practice-btn" onclick="closeGame()" style="margin-top: 15px; background: #8d99ae;">⬅️ Back to Menu</button>
+        </div>
+
+        <div id="crosswalkStage" class="hidden content-section" style="width: 100%; text-align: center;">
+            <h4 style="color: var(--primary-color); margin-bottom: 12px; margin-top: 5px; font-size: 1.2rem;">Crosswalk Stage</h4>
+            <div id="crosswalkCanvasContainer" style="display: flex; justify-content: center; align-items: center; border: 2px solid #fff; border-radius: 8px; background: #fff; overflow: hidden; margin: 0 auto; width: 320px; max-width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.3);"></div>
+            <div style="margin-top: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                <button onclick="moveCat('up')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">▲ Up</button>
+                <div style="display: flex; gap: 20px;">
+                    <button onclick="moveCat('left')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">◀ Left</button>
+                    <button onclick="moveCat('right')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Right ▶</button>
+                </div>
+                <button onclick="moveCat('down')" style="padding: 10px 20px; background: #ff758f; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">▼ Down</button>
+            </div>
+            <button class="practice-btn" onclick="closeGame()" style="margin-top: 15px; background: #8d99ae;">⬅️ Back to Menu</button>
+        </div>
+
+        <div id="memoryStage" class="hidden content-section" style="width: 100%; text-align: center;">
+            <h4 style="color: var(--primary-color); margin-bottom: 12px; margin-top: 5px; font-size: 1.2rem;">Memory Match</h4>
+            <div id="memoryBoard" style="display: grid; grid-template-columns: repeat(4, minmax(60px, 1fr)); gap: 10px; justify-items: center; width: 100%; max-width: 320px; margin: 0 auto;"></div>
+            <button class="practice-btn" onclick="closeGame()" style="margin-top: 20px; background: #8d99ae;">⬅️ Back to Menu</button>
+        </div>
+    </main>
+
+    <!-- Memes/Popups needed for the games -->
+    <div id="reiDisappointedPop" class="lock-overlay hidden" style="z-index: 20005;">
+        <div style="background: white; padding: 25px; border-radius: 16px; text-align: center; max-width: 280px;">
+            <img src="pics/rei-disappointed.jpg" alt="Disappointed Rei" style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid #d90429; margin-bottom: 15px;">
+            <h3 style="color: #d90429; margin: 0 0 10px 0;">Oh no!</h3>
+            <p style="color: #666; font-size: 0.95rem; margin: 0;">Rei hit a pipe! Game Over.</p>
+        </div>
+    </div>
+
+    <div id="dynamicReactionPop" class="lock-overlay hidden" style="z-index: 20005;">
+        <div style="background: white; padding: 25px; border-radius: 16px; text-align: center; max-width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <img id="reactionImage" src="" alt="Reaction" style="width: 120px; height: 120px; object-fit: cover; border-radius: 50%; border: 4px solid #ff758f; margin-bottom: 15px;">
+            <h3 id="reactionTitle" style="margin: 0 0 10px 0; font-size: 1.4rem;"></h3>
+            <p id="reactionDesc" style="color: #666; font-size: 0.95rem; margin: 0;"></p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // FLAG: Tells the game scripts we are in standalone mode!
+        window.isStandaloneMode = true; 
+        let currentStage = 0; // Required global for scripts
+
+        const LEADERBOARD_API = "https://api.sheety.co/d085eb98fe3832247bd18be97eebcba2/birthdayGreetingsMessages/leaderboard";
+
+        function openGame(gameType) {
+            document.getElementById("gameMenu").classList.add("hidden");
+            
+            if (gameType === 'flappy') {
+                currentStage = 1;
+                document.getElementById("flappyStage").classList.remove("hidden");
+                initFlappyGame();
+            } else if (gameType === 'crosswalk') {
+                currentStage = 2;
+                document.getElementById("crosswalkStage").classList.remove("hidden");
+                initCrosswalkGame();
+            } else if (gameType === 'memory') {
+                currentStage = 3;
+                document.getElementById("memoryStage").classList.remove("hidden");
+                initMemoryGame();
+            }
+        }
+
+        function closeGame() {
+            currentStage = 0; // Stops the animation loops
+            document.getElementById("flappyStage").classList.add("hidden");
+            document.getElementById("crosswalkStage").classList.add("hidden");
+            document.getElementById("memoryStage").classList.add("hidden");
+            document.getElementById("gameMenu").classList.remove("hidden");
+            
+            // Stop all audio
+            document.querySelectorAll('audio').forEach(el => el.pause());
+            loadLeaderboard();
+        }
+
+        // --- LEADERBOARD LOGIC ---
+        async function loadLeaderboard() {
+            const list = document.getElementById("leaderboardList");
+            try {
+                const response = await fetch(LEADERBOARD_API);
+                const data = await response.json();
+                
+                if (!data.leaderboard || data.leaderboard.length === 0) {
+                    list.innerHTML = "<p style='text-align: center; color: #888;'>No scores yet. Be the first!</p>";
+                    return;
+                }
+
+                // Sort by highest score, take top 10
+                const sorted = data.leaderboard.sort((a, b) => b.score - a.score).slice(0, 10);
+                
+                list.innerHTML = "";
+                sorted.forEach((entry, index) => {
+                    const row = document.createElement("div");
+                    row.style.cssText = "display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #e9d7f7;";
+                    row.innerHTML = `<span><b>#${index + 1}</b> ${entry.name}</span> <span style="font-weight: bold; color: var(--primary-color);">${entry.score} pts</span>`;
+                    list.appendChild(row);
+                });
+            } catch (err) {
+                list.innerHTML = "<p style='text-align: center; color: #d90429;'>Failed to load leaderboard.</p>";
+            }
+        }
+
+        window.submitLeaderboardScore = async function(name, score) {
+            try {
+                await fetch(LEADERBOARD_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        leaderboard: { name: name, score: score, date: new Date().toLocaleDateString() }
+                    })
+                });
+                alert("Score submitted successfully! 🏆");
+                loadLeaderboard();
+                closeGame();
+            } catch (err) {
+                alert("Failed to save score. Please try again later.");
+            }
+        };
+
+        // Universal Reaction Popup (used by memory game)
+        window.showReactionPopup = function(imgSrc, title, desc, color, duration, callback) {
+            const pop = document.getElementById("dynamicReactionPop");
+            document.getElementById("reactionImage").src = imgSrc;
+            document.getElementById("reactionImage").style.borderColor = color;
+            document.getElementById("reactionTitle").innerText = title;
+            document.getElementById("reactionTitle").style.color = color;
+            document.getElementById("reactionDesc").innerText = desc;
+            
+            pop.classList.remove("hidden");
+            setTimeout(() => {
+                pop.classList.add("hidden");
+                if (callback) callback();
+            }, duration);
+        };
+
+        // Populate Floating Background Reis
+        for(let i=1; i<=30; i++) {
+            const div = document.createElement('div');
+            div.className = `rei-plush bubble-${((i - 1) % 30) + 1}`; 
+            document.getElementById('mainReiBg').appendChild(div);
+        }
+        
+        loadLeaderboard(); // Load on page open
+    </script>
+
+    <script src="flappy-rei.js"></script>
+    <script src="crosswalk-cat.js"></script>
+    <script src="memory-game.js"></script>
+</body>
+</html>
